@@ -1,0 +1,10 @@
+# Ignore all data
+
+*.tif
+*.xml
+*.tfw
+*.shx
+*.prj
+*.dbf
+*.qpj
+*.shp
