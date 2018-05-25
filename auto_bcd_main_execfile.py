@@ -71,7 +71,7 @@ else:
     print "skipped Preprocessing"
 
 
-os.system("python auto_bcd_calculation.py -input_svf tmp/svf.sgrd -input_minic tmp/minic.sgrd -input_sinks tmp/sinks.sgrd")
+#os.system("python auto_bcd_calculation.py -input_svf tmp/svf.sgrd -input_minic tmp/minic.sgrd -input_sinks tmp/sinks.sgrd")
 
 print " --- Calculations completed --- "
 
