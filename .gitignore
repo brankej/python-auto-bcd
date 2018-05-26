@@ -1,5 +1,6 @@
 # Ignore all data
 
+*.png
 *.tif
 *.xml
 *.tfw
@@ -8,3 +9,6 @@
 *.dbf
 *.qpj
 *.shp
+*.sgrd
+*.sdat
+*.mgrd
