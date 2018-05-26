@@ -37,7 +37,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect past bomb craters.')
 parser.add_argument('-input_dem', type=str, help='Input of digital elevation model')
-parser.add_argument('-output', type=str, help='Output of detected points of interest')
+#parser.add_argument('-output', type=str, help='Output of detected points of interest')
 parser.add_argument('-size', type=int, help='size for further calculations', nargs='?', default=9)
 parser.add_argument('-method', type=str, help='method for calculations', choices=['all','skyview','minic','sinks'], nargs='?', default='all')
 
@@ -45,7 +45,7 @@ args = parser.parse_args()
 
 
 input = args.input_dem
-output=args.output
+#output=args.output
 size=args.size
 method=args.method
 #=========================================================================
@@ -66,26 +66,26 @@ method=args.method
 
 
 if method=="skyview":
-    os.system('saga_cmd ta_lighting 3 -DEM data_input/%s -SVF tmp/svf.sgrd') %(input)
-
+    cmd ='saga_cmd ta_lighting 3 -DEM data_input/%s -SVF tmp/svf.sgrd -VISIBLE tmp/visible.sgrd' %(input)
+    os.system(cmd)
 
 elif method=="minic":
-    os.system('saga_cmd ta_morphometry 23 -DEM data_input/%s -FEATURES tmp/features.sgrd -MINIC tmp/minic.sgrd -SIZE %i') %(input, size)
-
+    cmd ='saga_cmd ta_morphometry 23 -DEM data_input/%s -FEATURES tmp/features.sgrd -MINIC tmp/minic.sgrd -SIZE %i' %(input, size)
+    os.system(cmd)
 
 elif method=="sinks":
-    os.system('saga_cmd sim_qm_of_esp 1 -DEM data_input/%s -FILLED tmp/filledsinks.sgrd -SINKS tmp/sinks.sgrd -DZFILL 0.05') %(input)
-
+    cmd ='saga_cmd sim_qm_of_esp 1 -DEM data_input/%s -FILLED tmp/filledsinks.sgrd -SINKS tmp/sinks.sgrd -DZFILL 0.05' %(input)
+    os.system(cmd)
 
 elif method=="all":
-    os.system('saga_cmd ta_lighting 3 -DEM data_input/%s -SVF tmp/svf.sgrd') %(input)
+    cmd ='saga_cmd ta_lighting 3 -DEM data_input/%s -SVF tmp/svf.sgrd -VISIBLE tmp/visible.sgrd' %(input)
+    os.system(cmd)
 
+    cmd ='saga_cmd ta_morphometry 23 -DEM data_input/%s -FEATURES  tmp/features.sgrd -MINIC tmp/minic.sgrd -SIZE %i' %(input, size)
+    os.system(cmd)
 
-    os.system('saga_cmd ta_morphometry 23 -DEM data_input/%s -FEATURES  tmp/features.sgrd -MINIC tmp/minic.sgrd -SIZE %i') %(input, size)
-
-
-    os.system('saga_cmd sim_qm_of_esp 1 -DEM data_input/%s -FILLED  tmp/filledsinks.sgrd -SINKS tmp/sinks.sgrd -DZFILL 0.05') %(input)
-
+    cmd ='saga_cmd sim_qm_of_esp 1 -DEM data_input/%s -FILLED  tmp/filledsinks.sgrd -SINKS tmp/sinks.sgrd -DZFILL 0.05' %(input)
+    os.system(cmd)
 
 
 print " --- done --- "

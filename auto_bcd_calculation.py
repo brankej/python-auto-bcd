@@ -29,6 +29,7 @@ import numpy as np
 from math import *
 from progress.bar import Bar
 import argparse
+import osgeo.gdal as gdal
 #===========================================================================
 
 
@@ -61,45 +62,130 @@ def raster2array(rasterfn):
     raster = gdal.Open(rasterfn)
     band = raster.GetRasterBand(1)
     array = band.ReadAsArray()
-    return arrays
-
-def coord2pixelOffset(rasterfn,x,y):
-    raster = gdal.Open(rasterfn)
-    geotransform = raster.GetGeoTransform()
-    originX = geotransform[0]
-    originY = geotransform[3]
-    pixelWidth = geotransform[1]
-    pixelHeight = geotransform[5]
-    xOffset = int((x - originX)/pixelWidth)
-    yOffset = int((y - originY)/pixelHeight)
-    return xOffset,yOffset
-
-def pixelOffset2coord(rasterfn,xOffset,yOffset):
-    raster = gdal.Open(rasterfn)
-    geotransform = raster.GetGeoTransform()
-    originX = geotransform[0]
-    originY = geotransform[3]
-    pixelWidth = geotransform[1]
-    pixelHeight = geotransform[5]
-    coordX = originX+pixelWidth*xOffset
-    coordY = originY+pixelHeight*yOffset
-    return coordX, coordY
-
-
+    return array
 
 ########################################################
 ####             Main                ###################
 ########################################################
 
 
+###EINLESEN
+
+#read in svf
+
+svf_array = raster2array(input_svf)
+
+
+#read in sinks
+
+sinks_array = raster2array(input_sinks)
+
+
+#read in minic
+
+minic_array = raster2array(input_minic)
+
+
+myrast = gdal.Open(input_sinks)
+NROWS = myrast.RasterXSize
+NCOLS = myrast.RasterYSize
+geotransform = myrast.GetGeoTransform()
+wkt_projection = myrast.GetProjection()
+XULCorner = geotransform[0]
+YULCorner = geotransform[3]
+Cellsize = geotransform[1]
+
+myband = myrast.GetRasterBand(1)
+Nodata = myband.GetNoDataValue()
+
+print "--- DATA LOADED ---"
+
+###DO STUFF
+
+svf_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+#####
+bar = Bar(' -> Processing svf', max=NCOLS, suffix='%(percent)d%%')
+######
+
+for i in range(0,NCOLS,1):
+    for j in range(0,NROWS,1):
+
+        if svf_array[i][j] > 0.8 and svf_array[i][j] < 0.95:
+            svf_detect_array[i][j] = 1
+        else :
+            svf_detect_array[i][j] = 0
+
+    bar.next()
+bar.finish()
+
+###########################################
+minic_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+#####
+bar = Bar(' -> Processing minic', max=NCOLS, suffix='%(percent)d%%')
+######
+
+for i in range(0,NCOLS,1):
+    for j in range(0,NROWS,1):
+
+        if minic_array[i][j] > -0.1 and minic_array[i][j] < 0.0:
+            minic_detect_array[i][j] = 1
+        else :
+            minic_detect_array[i][j] = 0
+
+    bar.next()
+bar.finish()
+
+#############################################
+sinks_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+#####
+bar = Bar(' -> Processing sinks', max=NCOLS, suffix='%(percent)d%%')
+######
+
+for i in range(0,NCOLS,1):
+    for j in range(0,NROWS,1):
+
+        if sinks_array[i][j] > 0.0 and sinks_array[i][j] < 3.0:
+            sinks_detect_array[i][j] = 1
+        else :
+            sinks_detect_array[i][j] = 0
+
+    bar.next()
+bar.finish()
 
 
 
+detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+#####
+bar = Bar(' -> Processing Layerstack', max=NCOLS, suffix='%(percent)d%%')
+######
+
+for i in range(0,NCOLS,1):
+    for j in range(0,NROWS,1):
+
+        detect_array[i][j]=svf_detect_array[i][j]+minic_detect_array[i][j]+sinks_detect_array[i][j]
+
+    bar.next()
+bar.finish()
+###Output
+
+driver = gdal.GetDriverByName('GTiff')
+dataset = driver.Create("output/bcd_raster.tif", NROWS, NCOLS, 1, gdal.GDT_Float32 )
+dataset.SetGeoTransform((XULCorner,Cellsize,0,YULCorner,0,-Cellsize))
+dataset.SetProjection(wkt_projection)
+
+band_1 = dataset.GetRasterBand(1)
+band_1.WriteArray(detect_array)
+
+dataset.FlushCache()
 
 
 ###layerstack sum###
-#os.system('saga_cmd grid_calculus.so 1 -GRIDS [tmp/svf_1.sgrd, tmp/minic_1.sgrd, tmp/sinks_1.sgrd] -RESULT rast_calc_result.sgrd -FORMULA "(g1 + g2 + g3)" -TYPE 8')
-
+#cmd ='saga_cmd grid_calculus.so 1 -GRIDS [tmp/svf_1.sgrd, tmp/minic_1.sgrd, tmp/sinks_1.sgrd] -RESULT rast_calc_result.sgrd -FORMULA "(g1 + g2 + g3)" -TYPE 8')
+#os.system(cmd)
 #os.system('saga_cmd grid_tools 15  -> reclassify -> export to shp
 
 
