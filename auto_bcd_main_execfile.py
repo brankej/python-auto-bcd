@@ -18,7 +18,9 @@
   ###############################################################################
 
 
+
 """
+This Script attempts to autmomatically detect bomb craters - MAIN Execute File
 Created on Wed May 23 2018
 @author: j.branke & j.köck
 """
@@ -26,13 +28,14 @@ Created on Wed May 23 2018
 #IMPORT MODULES=============================================================
 import os
 import argparse
+from progress.spinner import Spinner
 #===========================================================================
 
 
 
 #PARSER====================================================================
 
-parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect past bomb craters.')
+parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect bomb craters - MAIN Execute File.')
 parser.add_argument('-input_dem', type=str, help='Input of digital elevation model')
 #parser.add_argument('-output', type=str, help='Output of detected points of interest')
 parser.add_argument('-size', type=int, help='size for further calculations', nargs='?', default=9)
@@ -61,23 +64,35 @@ mode=args.mode
 ########################################################
 
 #OUTPUT===================================================================
+spinner = Spinner('Loading ')
+state = "Running"
+while state != 'FINISHED':
+    # Do some work
 
-if mode=="TRUE":
-    cmd ="python auto_bcd_preprocessing.py -input_dem %s" %(input)
+    if mode=="TRUE":
+        cmd ="python auto_bcd_preprocessing.py -input_dem %s" %(input)
+        os.system(cmd)
+
+        print " --- Preprocessing completed --- "
+        spinner.next()
+        state = "FINISHED"
+    else:
+        print "skipped Preprocessing"
+        spinner.next()
+        state = "FINISHED"
+    ###################################
+
+state = "Running"
+while state != 'FINISHED':
+    # Do some work
+    cmd ="python auto_bcd_calculation.py -input_svf tmp/svf.sdat -input_minic tmp/minic.sdat -input_sinks tmp/sinks.sdat -input_curv_class tmp/class.sdat"
     os.system(cmd)
 
-    print " --- Preprocessing completed --- "
 
-else:
-    print "skipped Preprocessing"
+    print " --- Calculations completed --- "
 
-###################################
-
-
-cmd ="python auto_bcd_calculation.py -input_svf tmp/svf.sdat -input_minic tmp/minic.sdat -input_sinks tmp/sinks.sdat"
-os.system(cmd)
-
-print " --- Calculations completed --- "
-
+    spinner.next()
+    state = "FINISHED"
 
 print " --- done --- "
+print " --- Automatic Bomb Crate Detection FINISHED --- "
