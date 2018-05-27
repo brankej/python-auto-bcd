@@ -39,6 +39,7 @@ import osgeo.gdal as gdal
 parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect past bomb craters - CALCULATION.')
 parser.add_argument('-input_svf', type=str, help='Input of sky-view-factor')
 parser.add_argument('-input_minic', type=str, help='Input of morph_features -> minic')
+parser.add_argument('-input_maxic', type=str, help='Input of morph_features -> maxic')
 parser.add_argument('-input_sinks', type=str, help='Input of sinks')
 parser.add_argument('-input_curv_class', type=str, help='Input of curvature classes')
 #parser.add_argument('-output', type=str, help='Output of detected points of interest')
@@ -50,6 +51,7 @@ args = parser.parse_args()
 
 input_svf = args.input_svf
 input_minic=args.input_minic
+input_maxic=args.input_maxic
 input_sinks=args.input_sinks
 input_curv_class=args.input_curv_class
 #output=args.output
@@ -88,7 +90,11 @@ sinks_array = raster2array(input_sinks)
 
 minic_array = raster2array(input_minic)
 
-#read in minic
+#read in maxic
+
+maxic_array = raster2array(input_maxic)
+
+#read in curv_class
 
 class_array = raster2array(input_curv_class)
 
@@ -145,6 +151,24 @@ for i in range(0,NCOLS,1):
 bar.finish()
 
 ###########################################
+maxic_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+#####
+bar = Bar(' -> Processing maxic', max=NCOLS, suffix='%(percent)d%%')
+######
+
+for i in range(0,NCOLS,1):
+    for j in range(0,NROWS,1):
+
+        if maxic_array[i][j] > -0.16 and maxic_array[i][j] < -0.02:
+            maxic_detect_array[i][j] = 1
+        else :
+            maxic_detect_array[i][j] = 0
+
+    bar.next()
+bar.finish()
+
+###########################################
 class_detect_array = np.empty((NCOLS,NROWS),dtype=float)
 
 #####
@@ -154,7 +178,7 @@ bar = Bar(' -> Processing curvature class', max=NCOLS, suffix='%(percent)d%%')
 for i in range(0,NCOLS,1):
     for j in range(0,NROWS,1):
 
-        if class_array[i][j] = 0:
+        if class_array[i][j] == 0:
             class_detect_array[i][j] = 1
         else :
             class_detect_array[i][j] = 0
@@ -191,7 +215,7 @@ bar = Bar(' -> Processing Layerstack', max=NCOLS, suffix='%(percent)d%%')
 for i in range(0,NCOLS,1):
     for j in range(0,NROWS,1):
 
-        detect_array[i][j]=svf_detect_array[i][j]+minic_detect_array[i][j]+sinks_detect_array[i][j]+class_detect_array[i][j]
+        detect_array[i][j]=svf_detect_array[i][j]+minic_detect_array[i][j]+sinks_detect_array[i][j]+class_detect_array[i][j]+maxic_detect_array[i][j]
 
     bar.next()
 bar.finish()

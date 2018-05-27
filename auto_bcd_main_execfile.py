@@ -85,7 +85,7 @@ while state != 'FINISHED':
 state = "Running"
 while state != 'FINISHED':
     # Do some work
-    cmd ="python auto_bcd_calculation.py -input_svf tmp/svf.sdat -input_minic tmp/minic.sdat -input_sinks tmp/sinks.sdat -input_curv_class tmp/class.sdat"
+    cmd ="python auto_bcd_calculation.py -input_svf tmp/svf.sdat -input_minic tmp/minic.sdat -input_maxic tmp/maxic.sdat -input_sinks tmp/sinks.sdat -input_curv_class tmp/class.sdat"
     os.system(cmd)
 
 
