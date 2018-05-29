@@ -111,7 +111,7 @@ Cellsize = geotransform[1]
 myband = myrast.GetRasterBand(1)
 Nodata = myband.GetNoDataValue()
 
-print "--- DATA LOADED ---"
+print "--- DATA LOADED ---"         # TODO: unterschiedliche gewichtung der detect arrays
 
 ###DO STUFF
 
@@ -151,7 +151,7 @@ for i in range(0,NCOLS,1):
 bar.finish()
 
 ###########################################
-maxic_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+maxic_detect_array = np.empty((NCOLS,NROWS),dtype=float)   # TODO: maybe undo because of to much noise
 
 #####
 bar = Bar(' -> Processing maxic', max=NCOLS, suffix='%(percent)d%%')
