@@ -2,11 +2,11 @@
 
 ##Folder structure requirement
 
-- input_data
+- data_input
 - tmp
 - output
 
 
-## Very WIP 
+## Very WIP
 
 cheers
