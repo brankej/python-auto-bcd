@@ -40,6 +40,8 @@ parser = argparse.ArgumentParser(description='This Script attempts to autmomatic
 parser.add_argument('-input_svf', type=str, help='Input of sky-view-factor')
 parser.add_argument('-input_minic', type=str, help='Input of morph_features -> minic')
 parser.add_argument('-input_maxic', type=str, help='Input of morph_features -> maxic')
+parser.add_argument('-input_profc', type=str, help='Input of profc')
+parser.add_argument('-input_crosc', type=str, help='Input of crosc')
 parser.add_argument('-input_sinks', type=str, help='Input of sinks')
 parser.add_argument('-input_curv_class', type=str, help='Input of curvature classes')
 #parser.add_argument('-output', type=str, help='Output of detected points of interest')
@@ -52,6 +54,8 @@ args = parser.parse_args()
 input_svf = args.input_svf
 input_minic=args.input_minic
 input_maxic=args.input_maxic
+input_profc=args.input_profc
+input_crosc=args.input_crosc
 input_sinks=args.input_sinks
 input_curv_class=args.input_curv_class
 #output=args.output
@@ -94,6 +98,15 @@ minic_array = raster2array(input_minic)
 
 maxic_array = raster2array(input_maxic)
 
+
+#read in profc
+
+profc_array = raster2array(input_profc)
+
+#read in crosc
+
+crosc_array = raster2array(input_crosc)
+
 #read in curv_class
 
 class_array = raster2array(input_curv_class)
@@ -116,7 +129,7 @@ print "--- DATA LOADED ---"         # TODO: unterschiedliche gewichtung der dete
 ###DO STUFF
 
 svf_detect_array = np.empty((NCOLS,NROWS),dtype=float)
-
+svf_edge_array = np.empty((NCOLS,NROWS),dtype=float)
 #####
 bar = Bar(' -> Processing svf', max=NCOLS, suffix='%(percent)d%%')
 ######
@@ -124,17 +137,22 @@ bar = Bar(' -> Processing svf', max=NCOLS, suffix='%(percent)d%%')
 for i in range(0,NCOLS,1):
     for j in range(0,NROWS,1):
 
-        if svf_array[i][j] > 0.8 and svf_array[i][j] < 0.95:
+        if svf_array[i][j] > 0.8 and svf_array[i][j] < 0.925:
             svf_detect_array[i][j] = 1
         else :
             svf_detect_array[i][j] = 0
 
+        if svf_array[i][j] > 0.925 and svf_array[i][j] < 0.95:
+            svf_edge_array[i][j] = 1
+        else :
+            svf_edge_array[i][j] = 0		
+		
     bar.next()
 bar.finish()
 
 ###########################################
 minic_detect_array = np.empty((NCOLS,NROWS),dtype=float)
-
+minic_edge_array = np.empty((NCOLS,NROWS),dtype=float)
 #####
 bar = Bar(' -> Processing minic', max=NCOLS, suffix='%(percent)d%%')
 ######
@@ -142,17 +160,22 @@ bar = Bar(' -> Processing minic', max=NCOLS, suffix='%(percent)d%%')
 for i in range(0,NCOLS,1):
     for j in range(0,NROWS,1):
 
-        if minic_array[i][j] > -0.1 and minic_array[i][j] < 0.0:
+        if minic_array[i][j] > -0.18 and minic_array[i][j] < -0.03:
             minic_detect_array[i][j] = 1
         else :
             minic_detect_array[i][j] = 0
-
+			
+        if minic_array[i][j] > -0.03 and minic_array[i][j] < 0.0:
+            minic_edge_array[i][j] = 1
+        else :
+            minic_edge_array[i][j] = 0
+			
     bar.next()
 bar.finish()
 
 ###########################################
 maxic_detect_array = np.empty((NCOLS,NROWS),dtype=float)   # TODO: maybe undo because of to much noise
-
+maxic_edge_array = np.empty((NCOLS,NROWS),dtype=float)
 #####
 bar = Bar(' -> Processing maxic', max=NCOLS, suffix='%(percent)d%%')
 ######
@@ -164,7 +187,12 @@ for i in range(0,NCOLS,1):
             maxic_detect_array[i][j] = 1
         else :
             maxic_detect_array[i][j] = 0
-
+			
+        if maxic_array[i][j] > 0.02 and maxic_array[i][j] < 0.1:
+            maxic_edge_array[i][j] = 1
+        else :
+            maxic_edge_array[i][j] = 0
+			
     bar.next()
 bar.finish()
 
@@ -196,7 +224,7 @@ bar = Bar(' -> Processing sinks', max=NCOLS, suffix='%(percent)d%%')
 for i in range(0,NCOLS,1):
     for j in range(0,NROWS,1):
 
-        if sinks_array[i][j] > 0.0 and sinks_array[i][j] < 3.0:
+        if sinks_array[i][j] > 0.1 and sinks_array[i][j] < 2.0:
             sinks_detect_array[i][j] = 1
         else :
             sinks_detect_array[i][j] = 0
@@ -205,8 +233,65 @@ for i in range(0,NCOLS,1):
 bar.finish()
 
 
+
+#####EXTENDED#####
+
+#############################################
+profc_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+profc_edge_array = np.empty((NCOLS,NROWS),dtype=float)
+#####
+bar = Bar(' -> Processing profc', max=NCOLS, suffix='%(percent)d%%')
+######
+
+for i in range(0,NCOLS,1):
+    for j in range(0,NROWS,1):
+
+        if profc_array[i][j] > -0.15 and profc_array[i][j] < -0.01:
+            profc_detect_array[i][j] = 1
+        else :
+            profc_detect_array[i][j] = 0
+
+        if profc_array[i][j] > 0.01 and profc_array[i][j] < 0.075:
+            profc_edge_array[i][j] = 1
+        else :
+            profc_edge_array[i][j] = 0	
+			
+    bar.next()
+bar.finish()
+
+
+#############################################
+crosc_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+crosc_edge_array = np.empty((NCOLS,NROWS),dtype=float)
+#####
+bar = Bar(' -> Processing crosc', max=NCOLS, suffix='%(percent)d%%')
+######
+
+for i in range(0,NCOLS,1):
+    for j in range(0,NROWS,1):
+
+        if crosc_array[i][j] > -0.15 and crosc_array[i][j] < -0.01:
+            crosc_detect_array[i][j] = 1
+        else :
+            crosc_detect_array[i][j] = 0
+
+        if crosc_array[i][j] > 0.002 and crosc_array[i][j] < 0.02:
+            crosc_detect_array[i][j] = 1
+        else :
+            crosc_detect_array[i][j] = 0
+			
+    bar.next()
+bar.finish()
+
+
+
+####EXTENDED END#####
+
 #############################################
 detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
 
 #####
 bar = Bar(' -> Processing Layerstack', max=NCOLS, suffix='%(percent)d%%')
@@ -215,12 +300,29 @@ bar = Bar(' -> Processing Layerstack', max=NCOLS, suffix='%(percent)d%%')
 for i in range(0,NCOLS,1):
     for j in range(0,NROWS,1):
 
-        detect_array[i][j]=svf_detect_array[i][j]+minic_detect_array[i][j]+sinks_detect_array[i][j]+class_detect_array[i][j]+maxic_detect_array[i][j]
+        detect_array[i][j]=svf_detect_array[i][j]+minic_detect_array[i][j]+sinks_detect_array[i][j]+class_detect_array[i][j]+maxic_detect_array[i][j]+profc_detect_array[i][j]+crosc_detect_array[i][j]
 
     bar.next()
 bar.finish()
+
+#######################################
+edge_array = np.empty((NCOLS,NROWS),dtype=float)
+#####
+bar = Bar(' -> Processing Layerstack EDGE', max=NCOLS, suffix='%(percent)d%%')
+######
+
+for i in range(0,NCOLS,1):
+    for j in range(0,NROWS,1):
+
+		edge_array[i][j]=svf_edge_array[i][j]+minic_edge_array[i][j]+maxic_edge_array[i][j]+crosc_edge_array[i][j]+profc_edge_array[i][j]
+		
+    bar.next()
+bar.finish()
+
+
 ###Output
 
+#detect_array_out
 driver = gdal.GetDriverByName('GTiff')
 dataset = driver.Create("output/bcd_raster.tif", NROWS, NCOLS, 1, gdal.GDT_Float32 )
 dataset.SetGeoTransform((XULCorner,Cellsize,0,YULCorner,0,-Cellsize))
@@ -229,13 +331,20 @@ dataset.SetProjection(wkt_projection)
 band_1 = dataset.GetRasterBand(1)
 band_1.WriteArray(detect_array)
 
+#edge_array_out
+driver = gdal.GetDriverByName('GTiff')
+dataset = driver.Create("output/bcd_edge_raster.tif", NROWS, NCOLS, 1, gdal.GDT_Float32 )
+dataset.SetGeoTransform((XULCorner,Cellsize,0,YULCorner,0,-Cellsize))
+dataset.SetProjection(wkt_projection)
+
+band_1 = dataset.GetRasterBand(1)
+band_1.WriteArray(edge_array)
+
+
+#flushcache
 dataset.FlushCache()
 
 
-###layerstack sum###
-#cmd ='saga_cmd grid_calculus.so 1 -GRIDS [tmp/svf_1.sgrd, tmp/minic_1.sgrd, tmp/sinks_1.sgrd] -RESULT rast_calc_result.sgrd -FORMULA "(g1 + g2 + g3)" -TYPE 8')
-#os.system(cmd)
-#os.system('saga_cmd grid_tools 15  -> reclassify -> export to shp
 
 
 print " --- done --- "
