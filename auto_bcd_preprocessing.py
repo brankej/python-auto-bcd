@@ -40,7 +40,7 @@ parser = argparse.ArgumentParser(description='This Script attempts to autmomatic
 parser.add_argument('-input_dem', type=str, help='Input of digital elevation model')
 #parser.add_argument('-output', type=str, help='Output of detected points of interest')
 parser.add_argument('-size', type=int, help='size for further calculations', nargs='?', default=9)
-parser.add_argument('-method', type=str, help='method for calculations', choices=['all','skyview','min_max','sinks','curv_class'], nargs='?', default='all') # TODO: in help cite authors of ideas and tools
+parser.add_argument('-method', type=str, help='method for calculations', nargs='?', default='all') # TODO: in help cite authors of ideas and tools
 
 args = parser.parse_args()
 
@@ -65,35 +65,23 @@ method=args.method
 
 # TODO: check for time by specific tool -> most time expensive tool -> skyview
 
-
-if method=="skyview":
-    cmd ='saga_cmd ta_lighting 3 -DEM data_input/%s -SVF tmp/svf.sgrd -VISIBLE tmp/visible.sgrd' %(input)
-    os.system(cmd)
-
-elif method=="min_max":
-    cmd ='saga_cmd ta_morphometry 23 -DEM data_input/%s -FEATURES tmp/features.sgrd -MINIC tmp/minic.sgrd -MAXIC tmp/maxic.sgrd -PROFC tmp/profc.sgrd -CROSC tmp/crosc.sgrd -SIZE %i' %(input, size)
-    os.system(cmd)
-
-elif method=="curv_class":
-    cmd ='saga_cmd ta_morphometry 4 -DEM data_input/%s -CLASS tmp/class.sgrd' %(input)
-    os.system(cmd)
-
-elif method=="sinks":
-    cmd ='saga_cmd sim_qm_of_esp 1 -DEM data_input/%s -FILLED tmp/filledsinks.sgrd -SINKS tmp/sinks.sgrd -DZFILL 0.05' %(input)
-    os.system(cmd)
-
-elif method=="all":
+if method=="all":
     cmd ='saga_cmd ta_lighting 3 -DEM data_input/%s -SVF tmp/svf.sgrd -VISIBLE tmp/visible.sgrd' %(input)
     os.system(cmd)
 
     cmd ='saga_cmd ta_morphometry 23 -DEM data_input/%s -FEATURES tmp/features.sgrd -MINIC tmp/minic.sgrd -MAXIC tmp/maxic.sgrd -PROFC tmp/profc.sgrd -CROSC tmp/crosc.sgrd -SIZE %i' %(input, size)
     os.system(cmd)
-    
+
     cmd ='saga_cmd ta_morphometry 4 -DEM data_input/%s -CLASS tmp/class.sgrd' %(input)
     os.system(cmd)
 
     cmd ='saga_cmd sim_qm_of_esp 1 -DEM data_input/%s -FILLED  tmp/filledsinks.sgrd -SINKS tmp/sinks.sgrd -DZFILL 0.05' %(input)
     os.system(cmd)
 
+    cmd ='saga_cmd ta_morphometry 18 -DEM data_input/%s -TPI tmp/tpi.sgrd' %(input)
+    os.system(cmd)
+
+    cmd = 'saga_cmd ta_lighting 5 -DEM data_input/%s -POS tmp/pos.sgrd -NEG tmp/neg.sgrd' %(input)
+    os.system(cmd)
 
 print " --- done --- "
