@@ -37,19 +37,19 @@ from progress.spinner import Spinner
 
 parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect bomb craters - MAIN Execute File.')
 parser.add_argument('-input_dem', type=str, help='Input of digital elevation model')
-#parser.add_argument('-output', type=str, help='Output of detected points of interest')
 parser.add_argument('-size', type=int, help='size for further calculations', nargs='?', default=9)
-parser.add_argument('-method', type=str, help='method for calculations', choices=['all','skyview','minic','sinks'], nargs='?', default='all')
-parser.add_argument('-mode', type=str, help='mode of preprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
+parser.add_argument('-method', type=str, help='method for calculations --> List of Different SAGA GIS Tools containing (SVF; MINIC; MAXIC; PROFC; CROSC; CLASS; SINKS; T.OPENESS [optional TPI])', choices=['less','all'], nargs='?', default='less')
+parser.add_argument('-pre', type=str, help='pre of preprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
+parser.add_argument('-post', type=str, help='post of postprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
 
 args = parser.parse_args()
 
 
 input = args.input_dem
-#output=args.output
 size=args.size
 method=args.method
-mode=args.mode
+pre=args.pre
+post=args.post
 #=========================================================================
 
 
@@ -64,13 +64,15 @@ mode=args.mode
 ########################################################
 
 #OUTPUT===================================================================
+
+#####PREPROCESSING########
 spinner = Spinner('Loading ')
 state = "Running"
 while state != 'FINISHED':
     # Do some work
 
-    if mode=="TRUE":
-        cmd ="python auto_bcd_preprocessing.py -input_dem %s" %(input)
+    if pre=="TRUE":
+        cmd ="python auto_bcd_preprocessing.py -input_dem %s -method %s -size %i " %(input, method, size)
         os.system(cmd)
 
         print " --- Preprocessing completed --- "
@@ -82,10 +84,12 @@ while state != 'FINISHED':
         state = "FINISHED"
     ###################################
 
+#####CALCULATION########
+spinner = Spinner('Loading ')
 state = "Running"
 while state != 'FINISHED':
     # Do some work
-    cmd ="python auto_bcd_calculation.py -input_svf tmp/svf.sdat -input_minic tmp/minic.sdat -input_maxic tmp/maxic.sdat -input_sinks tmp/sinks.sdat -input_profc tmp/profc.sdat -input_crosc tmp/crosc.sdat -input_curv_class tmp/class.sdat"
+    cmd ="python auto_bcd_calculation.py -input_svf tmp/svf.sdat -input_minic tmp/minic.sdat -input_maxic tmp/maxic.sdat -input_sinks tmp/sinks.sdat -input_profc tmp/profc.sdat -input_crosc tmp/crosc.sdat -input_curv_class tmp/class.sdat -input_pos tmp/pos.sdat"
     os.system(cmd)
 
 
@@ -93,6 +97,33 @@ while state != 'FINISHED':
 
     spinner.next()
     state = "FINISHED"
+
+print " --- done --- "
+
+
+
+
+    ###################################
+
+#####POSTPROCESSING#####
+spinner = Spinner('Loading ')
+state = "Running"
+while state != 'FINISHED':
+    # Do some work
+
+    if post=="TRUE":
+        cmd ="python auto_bcd_postprocessing.py -input_craters output/bcd_raster.tif -input_edges output/bcd_edge_raster.tif"
+        os.system(cmd)
+
+        print " --- Postprocessing completed --- "
+        spinner.next()
+        state = "FINISHED"
+
+    else:
+        print "skipped Postprocessing"
+        spinner.next()
+        state = "FINISHED"
+
 
 print " --- done --- "
 print " --- Automatic Bomb Crate Detection FINISHED --- "

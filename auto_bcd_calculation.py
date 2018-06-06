@@ -25,7 +25,6 @@ Created on Wed May 23 2018
 """
 
 #IMPORT MODULES=============================================================
-import os
 import numpy as np
 from math import *
 from progress.bar import Bar
@@ -43,10 +42,10 @@ parser.add_argument('-input_maxic', type=str, help='Input of morph_features -> m
 parser.add_argument('-input_profc', type=str, help='Input of profc')
 parser.add_argument('-input_crosc', type=str, help='Input of crosc')
 parser.add_argument('-input_sinks', type=str, help='Input of sinks')
+parser.add_argument('-input_pos', type=str, help='Input of pos')
 parser.add_argument('-input_curv_class', type=str, help='Input of curvature classes')
-#parser.add_argument('-output', type=str, help='Output of detected points of interest')
-#parser.add_argument('-size', type=int, help='size for further calculations', nargs='?', default=9)
-#parser.add_argument('-method', type=str, help='method for calculations', choices=['all','skyview','morph_features','sinks'])
+
+
 
 args = parser.parse_args()
 
@@ -57,10 +56,9 @@ input_maxic=args.input_maxic
 input_profc=args.input_profc
 input_crosc=args.input_crosc
 input_sinks=args.input_sinks
+input_pos=args.input_pos
 input_curv_class=args.input_curv_class
-#output=args.output
-#size=args.size
-#method=args.method
+
 #=========================================================================
 
 
@@ -73,6 +71,15 @@ def raster2array(rasterfn):
     array = band.ReadAsArray()
     return array
 
+def thresholds2array(inarray, thresmin, thresmax, outarray, NCOLS, NROWS):
+    for i in range(0,NCOLS,1):                                              
+         for j in range(0,NROWS,1):
+             if inarray[i][j] > thresmin and inarray[i][j] < thresmax:
+                 outarray[i][j] = 1
+             else :
+                 outarray[i][j] = 0
+    return outarray
+
 ########################################################
 ####             Main                ###################
 ########################################################
@@ -81,37 +88,30 @@ def raster2array(rasterfn):
 ###EINLESEN
 
 #read in svf
-
 svf_array = raster2array(input_svf)
 
-
 #read in sinks
-
 sinks_array = raster2array(input_sinks)
 
-
 #read in minic
-
 minic_array = raster2array(input_minic)
 
 #read in maxic
-
 maxic_array = raster2array(input_maxic)
 
-
 #read in profc
-
 profc_array = raster2array(input_profc)
 
 #read in crosc
-
 crosc_array = raster2array(input_crosc)
 
-#read in curv_class
+#read in pos
+pos_array = raster2array(input_pos)
 
+#read in curv_class
 class_array = raster2array(input_curv_class)
 
-
+###########get necessary raster information###########
 myrast = gdal.Open(input_sinks)
 NROWS = myrast.RasterXSize
 NCOLS = myrast.RasterYSize
@@ -130,9 +130,16 @@ print "--- DATA LOADED ---"         # TODO: unterschiedliche gewichtung der dete
 
 svf_detect_array = np.empty((NCOLS,NROWS),dtype=float)
 svf_edge_array = np.empty((NCOLS,NROWS),dtype=float)
+
+#####
+#svf_crater_min = 0.8
+#svf_crater_max = 0.925
+#svf_edge_min = 0.925
+#svf_edge_max = 0.95
 #####
 bar = Bar(' -> Processing svf', max=NCOLS, suffix='%(percent)d%%')
 ######
+
 
 for i in range(0,NCOLS,1):
     for j in range(0,NROWS,1):
@@ -145,8 +152,8 @@ for i in range(0,NCOLS,1):
         if svf_array[i][j] > 0.925 and svf_array[i][j] < 0.95:
             svf_edge_array[i][j] = 1
         else :
-            svf_edge_array[i][j] = 0		
-		
+            svf_edge_array[i][j] = 0
+
     bar.next()
 bar.finish()
 
@@ -164,12 +171,12 @@ for i in range(0,NCOLS,1):
             minic_detect_array[i][j] = 1
         else :
             minic_detect_array[i][j] = 0
-			
+
         if minic_array[i][j] > -0.03 and minic_array[i][j] < 0.0:
             minic_edge_array[i][j] = 1
         else :
             minic_edge_array[i][j] = 0
-			
+
     bar.next()
 bar.finish()
 
@@ -187,12 +194,12 @@ for i in range(0,NCOLS,1):
             maxic_detect_array[i][j] = 1
         else :
             maxic_detect_array[i][j] = 0
-			
+
         if maxic_array[i][j] > 0.02 and maxic_array[i][j] < 0.1:
             maxic_edge_array[i][j] = 1
         else :
             maxic_edge_array[i][j] = 0
-			
+
     bar.next()
 bar.finish()
 
@@ -255,8 +262,8 @@ for i in range(0,NCOLS,1):
         if profc_array[i][j] > 0.01 and profc_array[i][j] < 0.075:
             profc_edge_array[i][j] = 1
         else :
-            profc_edge_array[i][j] = 0	
-			
+            profc_edge_array[i][j] = 0
+
     bar.next()
 bar.finish()
 
@@ -281,11 +288,27 @@ for i in range(0,NCOLS,1):
             crosc_detect_array[i][j] = 1
         else :
             crosc_detect_array[i][j] = 0
-			
+
     bar.next()
 bar.finish()
 
+#############################################
+pos_detect_array = np.empty((NCOLS,NROWS),dtype=float)
 
+#####
+bar = Bar(' -> Processing pos', max=NCOLS, suffix='%(percent)d%%')
+######
+
+for i in range(0,NCOLS,1):
+    for j in range(0,NROWS,1):
+
+        if pos_array[i][j] > 1.1 and pos_array[i][j] < 1.37:
+            pos_detect_array[i][j] = 1
+        else :
+            pos_detect_array[i][j] = 0
+
+    bar.next()
+bar.finish()
 
 ####EXTENDED END#####
 
@@ -300,7 +323,7 @@ bar = Bar(' -> Processing Layerstack', max=NCOLS, suffix='%(percent)d%%')
 for i in range(0,NCOLS,1):
     for j in range(0,NROWS,1):
 
-        detect_array[i][j]=svf_detect_array[i][j]+minic_detect_array[i][j]+sinks_detect_array[i][j]+class_detect_array[i][j]+maxic_detect_array[i][j]+profc_detect_array[i][j]+crosc_detect_array[i][j]
+        detect_array[i][j]=svf_detect_array[i][j]+minic_detect_array[i][j]+sinks_detect_array[i][j]+class_detect_array[i][j]+maxic_detect_array[i][j]+profc_detect_array[i][j]+crosc_detect_array[i][j]+pos_detect_array[i][j]
 
     bar.next()
 bar.finish()
@@ -315,7 +338,7 @@ for i in range(0,NCOLS,1):
     for j in range(0,NROWS,1):
 
 		edge_array[i][j]=svf_edge_array[i][j]+minic_edge_array[i][j]+maxic_edge_array[i][j]+crosc_edge_array[i][j]+profc_edge_array[i][j]
-		
+
     bar.next()
 bar.finish()
 
