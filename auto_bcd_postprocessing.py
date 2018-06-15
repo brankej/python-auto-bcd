@@ -208,55 +208,55 @@ gdal.Polygonize( srcband, srcband , dst_layer, -1, [], callback=None )
 # dataSource = None
 
 
-poly="output/craters_poly.shp"
-driver = ogr.GetDriverByName("ESRI Shapefile")
-dataSource = driver.Open(poly, 1)
-layer = dataSource.GetLayer()
-
-#make new fields
-Areafd = ogr.FieldDefn("Area", ogr.OFTReal)
-Areafd.SetWidth(32)
-Areafd.SetPrecision(3) #added line to set precision
-layer.CreateField(Areafd)
-Perimeterfd = ogr.FieldDefn("Perimeter", ogr.OFTReal)
-Perimeterfd.SetWidth(32)
-Perimeterfd.SetPrecision(3)
-layer.CreateField(Perimeterfd)
-Compactnessfd = ogr.FieldDefn("Compactn", ogr.OFTReal)
-Compactnessfd.SetWidth(32)
-Perimeterfd.SetPrecision(3)
-layer.CreateField(Compactnessfd)
-Fracdimfd = ogr.FieldDefn("Fracdim", ogr.OFTReal)
-Fracdimfd.SetWidth(32)
-Fracdimfd.SetPrecision(3)
-layer.CreateField(Fracdimfd)
-
-# For every polygon
-for feature in layer:
-    # get "FID" (Feature ID)
-    geom = feature.GetGeometryRef()
-    pts = geom.GetGeometryRef(0)
-    points = []
-    for p in xrange(pts.GetPointCount()):
-        points.append((pts.GetX(p), pts.GetY(p)))
-
-    # get the area
-    Area = area(points)
-    print Area
-    Perimeter = perimeter(points)
-
-    compactness = Perimeter / (2 * sqrt(PI * Area))
-    fracdim = 2 * (log(Perimeter) / log(Area))
-
-    feature.SetField("Area", Area)
-    feature.SetField("Perimeter", perimeter)
-    feature.SetField("Compactn", compactness)
-    feature.SetField("Fracdim", fracdim)
-    layer.SetFeature(feature)
-
-
-dataSource = None
-
+# poly="output/craters_poly.shp"
+# driver = ogr.GetDriverByName("ESRI Shapefile")
+# dataSource = driver.Open(poly, 1)
+# layer = dataSource.GetLayer()
+#
+# #make new fields
+# Areafd = ogr.FieldDefn("Area", ogr.OFTReal)
+# Areafd.SetWidth(32)
+# Areafd.SetPrecision(3) #added line to set precision
+# layer.CreateField(Areafd)
+# Perimeterfd = ogr.FieldDefn("Perimeter", ogr.OFTReal)
+# Perimeterfd.SetWidth(32)
+# Perimeterfd.SetPrecision(3)
+# layer.CreateField(Perimeterfd)
+# Compactnessfd = ogr.FieldDefn("Compactn", ogr.OFTReal)
+# Compactnessfd.SetWidth(32)
+# Perimeterfd.SetPrecision(3)
+# layer.CreateField(Compactnessfd)
+# Fracdimfd = ogr.FieldDefn("Fracdim", ogr.OFTReal)
+# Fracdimfd.SetWidth(32)
+# Fracdimfd.SetPrecision(3)
+# layer.CreateField(Fracdimfd)
+#
+# # For every polygon
+# for feature in layer:
+#     # get "FID" (Feature ID)
+#     geom = feature.GetGeometryRef()
+#     pts = geom.GetGeometryRef(0)
+#     points = []
+#     for p in xrange(pts.GetPointCount()):
+#         points.append((pts.GetX(p), pts.GetY(p)))
+#
+#     # get the area
+#     Area = area(points)
+#     print Area
+#     Perimeter = perimeter(points)
+#
+#     compactness = Perimeter / (2 * sqrt(PI * Area))
+#     fracdim = 2 * (log(Perimeter) / log(Area))
+#
+#     feature.SetField("Area", Area)
+#     feature.SetField("Perimeter", perimeter)
+#     feature.SetField("Compactn", compactness)
+#     feature.SetField("Fracdim", fracdim)
+#     layer.SetFeature(feature)
+#
+#
+# dataSource = None
+#
 
 
 
