@@ -41,8 +41,9 @@ parser.add_argument('-input_minic', type=str, help='Input of morph_features -> m
 parser.add_argument('-input_maxic', type=str, help='Input of morph_features -> maxic')
 parser.add_argument('-input_profc', type=str, help='Input of profc')
 parser.add_argument('-input_crosc', type=str, help='Input of crosc')
-parser.add_argument('-input_sinks', type=str, help='Input of sinks')
+#parser.add_argument('-input_sinks', type=str, help='Input of sinks')
 parser.add_argument('-input_pos', type=str, help='Input of pos')
+parser.add_argument('-input_protection', type=str, help='Input of protection')
 parser.add_argument('-input_curv_class', type=str, help='Input of curvature classes')
 
 
@@ -55,8 +56,9 @@ input_minic=args.input_minic
 input_maxic=args.input_maxic
 input_profc=args.input_profc
 input_crosc=args.input_crosc
-input_sinks=args.input_sinks
+#input_sinks=args.input_sinks
 input_pos=args.input_pos
+input_protection=args.input_protection
 input_curv_class=args.input_curv_class
 
 #=========================================================================
@@ -71,8 +73,9 @@ def raster2array(rasterfn):
     array = band.ReadAsArray()
     return array
 
-def thresholds2array(inarray, thresmin, thresmax, outarray, NCOLS, NROWS):
-    for i in range(0,NCOLS,1):                                              
+def thresholds2array(inarray, thresmin, thresmax, NCOLS, NROWS):
+    outarray = np.empty((NCOLS,NROWS),dtype=float)
+    for i in range(0,NCOLS,1):
          for j in range(0,NROWS,1):
              if inarray[i][j] > thresmin and inarray[i][j] < thresmax:
                  outarray[i][j] = 1
@@ -91,7 +94,7 @@ def thresholds2array(inarray, thresmin, thresmax, outarray, NCOLS, NROWS):
 svf_array = raster2array(input_svf)
 
 #read in sinks
-sinks_array = raster2array(input_sinks)
+#sinks_array = raster2array(input_sinks)
 
 #read in minic
 minic_array = raster2array(input_minic)
@@ -108,11 +111,14 @@ crosc_array = raster2array(input_crosc)
 #read in pos
 pos_array = raster2array(input_pos)
 
+#read in PROTECTION
+protection_array = raster2array(input_protection)
+
 #read in curv_class
 class_array = raster2array(input_curv_class)
 
 ###########get necessary raster information###########
-myrast = gdal.Open(input_sinks)
+myrast = gdal.Open(input_minic)
 NROWS = myrast.RasterXSize
 NCOLS = myrast.RasterYSize
 geotransform = myrast.GetGeoTransform()
@@ -222,22 +228,22 @@ for i in range(0,NCOLS,1):
 bar.finish()
 
 #############################################
-sinks_detect_array = np.empty((NCOLS,NROWS),dtype=float)
-
-#####
-bar = Bar(' -> Processing sinks', max=NCOLS, suffix='%(percent)d%%')
-######
-
-for i in range(0,NCOLS,1):
-    for j in range(0,NROWS,1):
-
-        if sinks_array[i][j] > 0.1 and sinks_array[i][j] < 2.0:
-            sinks_detect_array[i][j] = 1
-        else :
-            sinks_detect_array[i][j] = 0
-
-    bar.next()
-bar.finish()
+# sinks_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+#
+# #####
+# bar = Bar(' -> Processing sinks', max=NCOLS, suffix='%(percent)d%%')
+# ######
+#
+# for i in range(0,NCOLS,1):
+#     for j in range(0,NROWS,1):
+#
+#         if sinks_array[i][j] > 0.1 and sinks_array[i][j] < 2.0:
+#             sinks_detect_array[i][j] = 1
+#         else :
+#             sinks_detect_array[i][j] = 0
+#
+#     bar.next()
+# bar.finish()
 
 
 
@@ -310,6 +316,25 @@ for i in range(0,NCOLS,1):
     bar.next()
 bar.finish()
 
+#############################################
+protection_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+#####
+bar = Bar(' -> Processing Protection', max=NCOLS, suffix='%(percent)d%%')
+######
+
+for i in range(0,NCOLS,1):
+    for j in range(0,NROWS,1):
+
+        if protection_array[i][j] > 0.22 and protection_array[i][j] < 0.35:
+            protection_detect_array[i][j] = 1
+        else :
+            protection_detect_array[i][j] = 0
+
+    bar.next()
+bar.finish()
+
+
 ####EXTENDED END#####
 
 #############################################
@@ -323,7 +348,7 @@ bar = Bar(' -> Processing Layerstack', max=NCOLS, suffix='%(percent)d%%')
 for i in range(0,NCOLS,1):
     for j in range(0,NROWS,1):
 
-        detect_array[i][j]=svf_detect_array[i][j]+minic_detect_array[i][j]+sinks_detect_array[i][j]+class_detect_array[i][j]+maxic_detect_array[i][j]+profc_detect_array[i][j]+crosc_detect_array[i][j]+pos_detect_array[i][j]
+        detect_array[i][j]=svf_detect_array[i][j]+minic_detect_array[i][j]+class_detect_array[i][j]+maxic_detect_array[i][j]+profc_detect_array[i][j]+crosc_detect_array[i][j]+pos_detect_array[i][j]+protection_array[i][j] #+sinks_detect_array[i][j]
 
     bar.next()
 bar.finish()

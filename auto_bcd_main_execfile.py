@@ -40,6 +40,7 @@ parser.add_argument('-input_dem', type=str, help='Input of digital elevation mod
 parser.add_argument('-size', type=int, help='size for further calculations', nargs='?', default=9)
 parser.add_argument('-method', type=str, help='method for calculations --> List of Different SAGA GIS Tools containing (SVF; MINIC; MAXIC; PROFC; CROSC; CLASS; SINKS; T.OPENESS [optional TPI])', choices=['less','all'], nargs='?', default='less')
 parser.add_argument('-pre', type=str, help='pre of preprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
+parser.add_argument('-calc', type=str, help='calc of preprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
 parser.add_argument('-post', type=str, help='post of postprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
 
 args = parser.parse_args()
@@ -49,6 +50,7 @@ input = args.input_dem
 size=args.size
 method=args.method
 pre=args.pre
+calc=args.calc
 post=args.post
 #=========================================================================
 
@@ -82,6 +84,8 @@ while state != 'FINISHED':
         print "skipped Preprocessing"
         spinner.next()
         state = "FINISHED"
+
+print " --- done --- "
     ###################################
 
 #####CALCULATION########
@@ -89,19 +93,20 @@ spinner = Spinner('Loading ')
 state = "Running"
 while state != 'FINISHED':
     # Do some work
-    cmd ="python auto_bcd_calculation.py -input_svf tmp/svf.sdat -input_minic tmp/minic.sdat -input_maxic tmp/maxic.sdat -input_sinks tmp/sinks.sdat -input_profc tmp/profc.sdat -input_crosc tmp/crosc.sdat -input_curv_class tmp/class.sdat -input_pos tmp/pos.sdat"
-    os.system(cmd)
+    if calc=="TRUE":
+        cmd ="python auto_bcd_calculation.py -input_svf tmp/svf.sdat -input_minic tmp/minic.sdat -input_maxic tmp/maxic.sdat -input_profc tmp/profc.sdat -input_crosc tmp/crosc.sdat -input_curv_class tmp/class.sdat -input_pos tmp/pos.sdat -input_protection tmp/protection.sdat" #-input_sinks tmp/sinks.sdat
+        os.system(cmd)
 
+        print " --- Calculations completed --- "
+        spinner.next()
+        state = "FINISHED"
 
-    print " --- Calculations completed --- "
-
-    spinner.next()
-    state = "FINISHED"
+    else:
+        print "skipped Calculation"
+        spinner.next()
+        state = "FINISHED"
 
 print " --- done --- "
-
-
-
 
     ###################################
 
@@ -112,7 +117,7 @@ while state != 'FINISHED':
     # Do some work
 
     if post=="TRUE":
-        cmd ="python auto_bcd_postprocessing.py -input_craters output/bcd_raster.tif -input_edges output/bcd_edge_raster.tif"
+        cmd ="python auto_bcd_postprocessing.py -input_craters output/bcd_raster.tif"
         os.system(cmd)
 
         print " --- Postprocessing completed --- "

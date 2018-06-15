@@ -39,7 +39,9 @@ import argparse
 parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect past bomb craters - PREPROCESSING.')
 parser.add_argument('-input_dem', type=str, help='Input of digital elevation model')
 parser.add_argument('-size', type=int, help='size for further calculations', nargs='?', default=9)
-parser.add_argument('-method', type=str, help='method for calculations --> List of Different SAGA GIS Tools containing (SVF; MINIC; MAXIC; PROFC; CROSC; CLASS; SINKS; T.OPENESS [optional TPI])', choices=['less','all'], nargs='?', default='less') # TODO: in help cite authors of ideas and tools
+parser.add_argument('-method', type=str, help='method for calculations --> List of Different SAGA GIS Tools containing (SVF; MINIC; MAXIC; PROFC; CROSC; CLASS; SINKS; T.OPENESS [optional TPI])', choices=['less','all'], nargs='?', default='less')
+parser.add_argument('-radius', type=int, help='radius of suspected bombcraters', nargs='?', default=5)
+ # TODO: in help cite authors of ideas and tools
 
 args = parser.parse_args()
 
@@ -47,6 +49,7 @@ args = parser.parse_args()
 input = args.input_dem
 size=args.size
 method=args.method
+radius=args.radius
 #=========================================================================
 
 
@@ -79,6 +82,9 @@ if method=="less":
     cmd = 'saga_cmd ta_lighting 5 -DEM data_input/%s -POS tmp/pos.sgrd -NEG tmp/neg.sgrd' %(input)
     os.system(cmd)
 
+    cmd = 'saga_cmd ta_morphometry 7 -DEM data_input/%s -PROTECTION tmp/protection.sgrd -RADIUS %i' %(input, radius)
+    os.system(cmd)
+
 elif method=="all":
     cmd ='saga_cmd ta_lighting 3 -DEM data_input/%s -SVF tmp/svf.sgrd -VISIBLE tmp/visible.sgrd' %(input)
     os.system(cmd)
@@ -97,5 +103,8 @@ elif method=="all":
 
     cmd = 'saga_cmd ta_lighting 5 -DEM data_input/%s -POS tmp/pos.sgrd -NEG tmp/neg.sgrd' %(input)
     os.system(cmd)
+
+    cmd = 'saga_cmd ta_morphometry 7 -DEM data_input/%s -PROTECTION tmp/protection.sgrd -RADIUS %i' %(input, radius)
+    os.system(cmd)    
 
 print " --- done --- "
