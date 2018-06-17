@@ -37,7 +37,7 @@ import argparse
 #PARSER====================================================================
 
 parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect past bomb craters - PREPROCESSING.')
-parser.add_argument('-input_dem', type=str, help='Input of digital elevation model')
+parser.add_argument('-DEM', type=str, help='Input of digital elevation model')
 parser.add_argument('-size', type=int, help='size for further calculations', nargs='?', default=9)
 parser.add_argument('-method', type=str, help='method for calculations --> List of Different SAGA GIS Tools containing (SVF; MINIC; MAXIC; PROFC; CROSC; CLASS; SINKS; T.OPENESS [optional TPI])', choices=['less','all'], nargs='?', default='less')
 parser.add_argument('-radius', type=int, help='radius of suspected bombcraters', nargs='?', default=5)
@@ -46,7 +46,7 @@ parser.add_argument('-radius', type=int, help='radius of suspected bombcraters',
 args = parser.parse_args()
 
 
-input = args.input_dem
+input = args.DEM
 size=args.size
 method=args.method
 radius=args.radius
@@ -105,6 +105,6 @@ elif method=="all":
     os.system(cmd)
 
     cmd = 'saga_cmd ta_morphometry 7 -DEM data_input/%s -PROTECTION tmp/protection.sgrd -RADIUS %i' %(input, radius)
-    os.system(cmd)    
+    os.system(cmd)
 
 print " --- done --- "

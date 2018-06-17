@@ -32,6 +32,7 @@ import argparse
 import osgeo.gdal as gdal
 import osgeo.ogr as ogr
 import cv2 as cv
+import geopandas as gpd
 #===========================================================================
 
 
@@ -60,12 +61,14 @@ kernel = args.kernel
 ########################################################
 
 def raster2array(rasterfn):
+    """Input Raster to Array """
     raster = gdal.Open(rasterfn)
     band = raster.GetRasterBand(1)
     array = band.ReadAsArray()
     return array
 
 def thresholds2array(inarray, thresmin, thresmax, NCOLS, NROWS):
+    """Select from Array(a) all values between specified threshold, returns binary array """
     outarray = np.empty((NCOLS,NROWS),dtype=float)
     for i in range(0,NCOLS,1):
          for j in range(0,NROWS,1):
@@ -79,14 +82,25 @@ def segments(poly):
         """A sequence of (x,y) numeric coordinates pairs """
         return zip(poly, poly[1:] + [poly[0]])
 
-def area(poly):
+def area_(poly):
     """A sequence of (x,y) numeric coordinates pairs """
     return 0.5 * abs(sum(x0*y1 - x1*y0
         for ((x0, y0), (x1, y1)) in segments(poly)))
 
-def perimeter(poly):
+def perimeter_(poly):
     """A sequence of (x,y) numeric coordinates pairs """
     return abs(sum(math.hypot(x0-x1,y0-y1) for ((x0, y0), (x1, y1)) in segments(poly)))
+
+def compactness(Perimeter, Area):
+    """Calculation of Compactness Values"""
+    compactness = Perimeter / (2 * sqrt(PI * Area))
+    return compactness
+
+def frac_dim(Perimeter, Area):
+    """Calculation of Fractal Dimensions"""
+    fracdim = 2 * (log(Perimeter) / log(Area))
+    return fracdim
+
 ########################################################
 ####             Main                ###################
 ########################################################
@@ -113,7 +127,7 @@ Nodata = myband.GetNoDataValue()
 
 print "--- DATA LOADED ---"
 
-
+########################
 #to binary
 ########################
 bombcraters_array = thresholds2array(craters_array, thresmin, thresmax, NCOLS, NROWS)
@@ -156,8 +170,10 @@ band_1.WriteArray(closing)
 dataset.FlushCache()
 
 ########################################################################
+
 #############
 #POLYGONIZE
+#############
 #  get raster datasource
 src_ds = gdal.Open("output/closing.tif")
 srcband = src_ds.GetRasterBand(1)
@@ -169,95 +185,49 @@ dst_ds = drv.CreateDataSource( dst_layername + ".shp" )
 dst_layer = dst_ds.CreateLayer(dst_layername, srs = None )
 gdal.Polygonize( srcband, srcband , dst_layer, -1, [], callback=None )
 
+print "--- Polygonize done ---"
+########################################################################
 
-########CALC GEOMETRY###########
-# driver = ogr.GetDriverByName("ESRI Shapefile")
-# dataSource = driver.Open("output/craters_poly.shp", 1)
-# layer = dataSource.GetLayer()
-# Areafd = ogr.FieldDefn("Area", ogr.OFTReal)
-# Areafd.SetWidth(32)
-# Areafd.SetPrecision(3) #added line to set precision
-# layer.CreateField(Areafd)
-# Perimeterfd = ogr.FieldDefn("Perimeter", ogr.OFTReal)
-# Perimeterfd.SetWidth(32)
-# Perimeterfd.SetPrecision(3)
-# layer.CreateField(Perimeterfd)
-# Compactnessfd = ogr.FieldDefn("Compactness", ogr.OFTReal)
-# Compactnessfd.SetWidth(32)
-# Perimeterfd.SetPrecision(3)
-# layer.CreateField(Compactnessfd)
-# Fracdimfd = ogr.FieldDefn("Fracdim", ogr.OFTReal)
-# Fracdimfd.SetWidth(32)
-# Fracdimfd.SetPrecision(3)
-# layer.CreateField(Fracdimfd)
-#
-# for feature in layer:
-#     geom = feature.GetGeometryRef()
-#     area = geom.GetArea()
-#     perimeter = geom.Boundary().Length()
-#     compactness = perimeter / (2 * sqrt(PI * area))
-#     fracdim = 2 * (log(perimeter) / log(area))
-#     #print area
-#
-#     feature.SetField("Area", area)
-#     feature.SetField("Perimeter", perimeter)
-#     feature.SetField("Compactness", compactness)
-#     feature.SetField("Fracdim", fracdim)
-#     layer.SetFeature(feature)
-#
-# dataSource = None
+#############
+#Calc GEOMETRY
+#############
+# Read file using read_file
+data = gpd.read_file("output/craters_poly.shp")
+
+#We can iterate over the selected rows using a specific .iterrows() -function in (geo)pandas:
+#for index, row in data.iterrows():
+    #poly_area = row['geometry'].area
+    #print("Polygon area at index {0} is: {1:.3f}".format(index, poly_area))
+
+# Iterate rows one at the time
+for index, row in data.iterrows():
+    # Empty column for area
+    data['area'] = None
+    data['perimeter'] = None
+    data['compactn'] = None
+    data['fracdim'] = None
+
+    # Update the value in 'area' column with area information at index
+    data.loc[index, 'area'] = area_(row['geometry'])
+    data.loc[index, 'perimeter'] = perimeter_(row['geometry'])
+    data.loc[index, 'compactn'] = compactness(row['perimeter'],row['area'])
+    data.loc[index, 'fracdim'] = frac_dim(row['perimeter'],row['area'])
+
+# Maximum area # Minimum area
+max_area = data['area'].max()
+min_area = data['area'].mean()
+print("Max area: %s\nMean area: %s" % (round(max_area, 2), round(min_area, 2)))
 
 
-# poly="output/craters_poly.shp"
-# driver = ogr.GetDriverByName("ESRI Shapefile")
-# dataSource = driver.Open(poly, 1)
-# layer = dataSource.GetLayer()
-#
-# #make new fields
-# Areafd = ogr.FieldDefn("Area", ogr.OFTReal)
-# Areafd.SetWidth(32)
-# Areafd.SetPrecision(3) #added line to set precision
-# layer.CreateField(Areafd)
-# Perimeterfd = ogr.FieldDefn("Perimeter", ogr.OFTReal)
-# Perimeterfd.SetWidth(32)
-# Perimeterfd.SetPrecision(3)
-# layer.CreateField(Perimeterfd)
-# Compactnessfd = ogr.FieldDefn("Compactn", ogr.OFTReal)
-# Compactnessfd.SetWidth(32)
-# Perimeterfd.SetPrecision(3)
-# layer.CreateField(Compactnessfd)
-# Fracdimfd = ogr.FieldDefn("Fracdim", ogr.OFTReal)
-# Fracdimfd.SetWidth(32)
-# Fracdimfd.SetPrecision(3)
-# layer.CreateField(Fracdimfd)
-#
-# # For every polygon
-# for feature in layer:
-#     # get "FID" (Feature ID)
-#     geom = feature.GetGeometryRef()
-#     pts = geom.GetGeometryRef(0)
-#     points = []
-#     for p in xrange(pts.GetPointCount()):
-#         points.append((pts.GetX(p), pts.GetY(p)))
-#
-#     # get the area
-#     Area = area(points)
-#     print Area
-#     Perimeter = perimeter(points)
-#
-#     compactness = Perimeter / (2 * sqrt(PI * Area))
-#     fracdim = 2 * (log(Perimeter) / log(Area))
-#
-#     feature.SetField("Area", Area)
-#     feature.SetField("Perimeter", perimeter)
-#     feature.SetField("Compactn", compactness)
-#     feature.SetField("Fracdim", fracdim)
-#     layer.SetFeature(feature)
-#
-#
-# dataSource = None
-#
 
+####################
+#SELECT FOR SPECIFIC Values
+####################
+
+# Create a output path for the data
+outpoly = "output/craters_poly_w_data.shp"
+# Write those rows into a new Shapefile (the default output file format is Shapefile)
+data.to_file(outpoly)
 
 
 print " --- done --- "

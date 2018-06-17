@@ -36,7 +36,7 @@ from progress.spinner import Spinner
 #PARSER====================================================================
 
 parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect bomb craters - MAIN Execute File.')
-parser.add_argument('-input_dem', type=str, help='Input of digital elevation model')
+parser.add_argument('-DEM', type=str, help='Input of digital elevation model')
 parser.add_argument('-size', type=int, help='size for further calculations', nargs='?', default=9)
 parser.add_argument('-method', type=str, help='method for calculations --> List of Different SAGA GIS Tools containing (SVF; MINIC; MAXIC; PROFC; CROSC; CLASS; SINKS; T.OPENESS [optional TPI])', choices=['less','all'], nargs='?', default='less')
 parser.add_argument('-pre', type=str, help='pre of preprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
@@ -46,7 +46,7 @@ parser.add_argument('-post', type=str, help='post of postprocessing tool usage',
 args = parser.parse_args()
 
 
-input = args.input_dem
+input = args.DEM
 size=args.size
 method=args.method
 pre=args.pre
@@ -74,7 +74,7 @@ while state != 'FINISHED':
     # Do some work
 
     if pre=="TRUE":
-        cmd ="python auto_bcd_preprocessing.py -input_dem %s -method %s -size %i " %(input, method, size)
+        cmd ="python auto_bcd_preprocessing.py -DEM %s -method %s -size %i " %(input, method, size)
         os.system(cmd)
 
         print " --- Preprocessing completed --- "
