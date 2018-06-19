@@ -25,6 +25,8 @@ Created on Wed Juni 06 2018
 """
 
 #IMPORT MODULES=============================================================
+import geopandas as gpd
+import os
 import numpy as np
 from math import *
 from progress.bar import Bar
@@ -32,7 +34,6 @@ import argparse
 import osgeo.gdal as gdal
 import osgeo.ogr as ogr
 import cv2 as cv
-import geopandas as gpd
 #===========================================================================
 
 
@@ -77,29 +78,6 @@ def thresholds2array(inarray, thresmin, thresmax, NCOLS, NROWS):
              else :
                  outarray[i][j] = 0
     return outarray
-
-def segments(poly):
-        """A sequence of (x,y) numeric coordinates pairs """
-        return zip(poly, poly[1:] + [poly[0]])
-
-def area_(poly):
-    """A sequence of (x,y) numeric coordinates pairs """
-    return 0.5 * abs(sum(x0*y1 - x1*y0
-        for ((x0, y0), (x1, y1)) in segments(poly)))
-
-def perimeter_(poly):
-    """A sequence of (x,y) numeric coordinates pairs """
-    return abs(sum(math.hypot(x0-x1,y0-y1) for ((x0, y0), (x1, y1)) in segments(poly)))
-
-def compactness(Perimeter, Area):
-    """Calculation of Compactness Values"""
-    compactness = Perimeter / (2 * sqrt(PI * Area))
-    return compactness
-
-def frac_dim(Perimeter, Area):
-    """Calculation of Fractal Dimensions"""
-    fracdim = 2 * (log(Perimeter) / log(Area))
-    return fracdim
 
 ########################################################
 ####             Main                ###################
@@ -191,43 +169,12 @@ print "--- Polygonize done ---"
 #############
 #Calc GEOMETRY
 #############
-# Read file using read_file
-data = gpd.read_file("output/craters_poly.shp")
 
-#We can iterate over the selected rows using a specific .iterrows() -function in (geo)pandas:
-#for index, row in data.iterrows():
-    #poly_area = row['geometry'].area
-    #print("Polygon area at index {0} is: {1:.3f}".format(index, poly_area))
-
-# Iterate rows one at the time
-for index, row in data.iterrows():
-    # Empty column for area
-    data['area'] = None
-    data['perimeter'] = None
-    data['compactn'] = None
-    data['fracdim'] = None
-
-    # Update the value in 'area' column with area information at index
-    data.loc[index, 'area'] = area_(row['geometry'])
-    data.loc[index, 'perimeter'] = perimeter_(row['geometry'])
-    data.loc[index, 'compactn'] = compactness(row['perimeter'],row['area'])
-    data.loc[index, 'fracdim'] = frac_dim(row['perimeter'],row['area'])
-
-# Maximum area # Minimum area
-max_area = data['area'].max()
-min_area = data['area'].mean()
-print("Max area: %s\nMean area: %s" % (round(max_area, 2), round(min_area, 2)))
+#cmd="shp_n_attribs.py"
+#os.system(cmd)
 
 
 
-####################
-#SELECT FOR SPECIFIC Values
-####################
-
-# Create a output path for the data
-outpoly = "output/craters_poly_w_data.shp"
-# Write those rows into a new Shapefile (the default output file format is Shapefile)
-data.to_file(outpoly)
 
 
 print " --- done --- "

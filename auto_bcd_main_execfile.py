@@ -42,6 +42,7 @@ parser.add_argument('-method', type=str, help='method for calculations --> List 
 parser.add_argument('-pre', type=str, help='pre of preprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
 parser.add_argument('-calc', type=str, help='calc of preprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
 parser.add_argument('-post', type=str, help='post of postprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
+parser.add_argument('-error', type=str, help='post of postprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
 
 args = parser.parse_args()
 
@@ -51,7 +52,8 @@ size=args.size
 method=args.method
 pre=args.pre
 calc=args.calc
-post=args.post
+post=args.post#
+error=args.error
 #=========================================================================
 
 
@@ -120,6 +122,9 @@ while state != 'FINISHED':
         cmd ="python auto_bcd_postprocessing.py -input_craters output/bcd_raster.tif"
         os.system(cmd)
 
+        cmd="shp_n_attribs.py -rast data_input/%s" % (input)
+        os.system(cmd)
+
         print " --- Postprocessing completed --- "
         spinner.next()
         state = "FINISHED"
@@ -129,6 +134,29 @@ while state != 'FINISHED':
         spinner.next()
         state = "FINISHED"
 
+print " --- done --- "
+
+    ###################################
+
+#####ERROR ASSESSMENT#####
+spinner = Spinner('Loading ')
+state = "Running"
+while state != 'FINISHED':
+    # Do some work
+
+    if error =="TRUE":
+        cmd ="python auto_bcd_errorassessment.py -input_craters output/bcd_raster.tif" # TODO: !!!!!!!
+        os.system(cmd)
+
+        print " --- Error Assessment completed --- "
+        spinner.next()
+        state = "FINISHED"
+
+    else:
+        print "skipped Error Assessment"
+        spinner.next()
+        state = "FINISHED"
 
 print " --- done --- "
+
 print " --- Automatic Bomb Crate Detection FINISHED --- "
