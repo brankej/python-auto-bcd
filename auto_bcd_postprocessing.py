@@ -25,7 +25,6 @@ Created on Wed Juni 06 2018
 """
 
 #IMPORT MODULES=============================================================
-import geopandas as gpd
 import os
 import numpy as np
 from math import *

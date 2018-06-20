@@ -26,10 +26,13 @@ Created on Wed May 23 2018
 """
 
 #IMPORT MODULES=============================================================
+#import sys
+#sys.path.append('''C:\Python27\Lib\site-packages\geopandas''')
 import geopandas as gpd
 from math import *
 from rasterstats import zonal_stats
 import argparse
+from progress.bar import Bar
 
 
 
@@ -63,6 +66,29 @@ def compact_circ(Perimeter, Area):
 ####             Main                ###################
 ########################################################
 
+####RASTERSTATS#######
+raster2stats="%s" % (input)
+stats = zonal_stats("output/craters_poly.shp", raster2stats)
+
+#empty container lists
+stats_depth = []
+stats_min = []
+stats_max = []
+stats_max_min = []
+
+#get min and max from stats to list --> zip
+stats_min = [s['min'] for s in stats]
+stats_max = [s['max'] for s in stats]
+stats_max_min = zip(stats_max, stats_min)
+
+#calc depth for ziplist
+for k in range(len(stats_max_min)):
+    stats_depth.append(stats_max_min[k][0] - stats_max_min[k][1])
+
+#print stats_depth
+####RASTERSTATS#######
+
+
 data = gpd.read_file("output/craters_poly.shp")
 
 
@@ -73,16 +99,25 @@ data['area'] = None
 data['perimeter'] = None
 data['compactn'] = None
 data['circ'] = None
+data['Depth'] = None
 data['Treffer'] = None
 
+
+#####
+bar = Bar(' -> Creating Attrib Fields', max=len(data), suffix='%(percent)d%%')
+######
 # Iterate rows one at the time
 for index, row in data.iterrows():
+    #print "index", index, "row", row
     # Update the value in 'area' column with area information at index
     data.loc[index, 'area'] = Area =row['geometry'].area
     data.loc[index, 'perimeter'] = Perimter  =(row['geometry']).length
 
     data.loc[index, 'compactn'] = Compactness = compactness(Perimter, Area)
     data.loc[index, 'circ'] = Compact_circ = compact_circ(Perimter, Area)
+
+    #add depth value for index (int) to gpd dataframe
+    data.loc[index, 'Depth'] = stats_depth[index]
 
     ####################
     #SELECT FOR SPECIFIC Values
@@ -91,12 +126,11 @@ for index, row in data.iterrows():
     #test true
     if data.loc[index, 'area'] > 12 and data.loc[index, 'area'] < 80 and data.loc[index, 'circ'] > 1.0 and data.loc[index, 'circ'] < 2.1:
          count +=1
-         print 'Treffer -->',count, data.loc[index, 'FID']
+         #print 'Treffer -->',count, data.loc[index, 'FID']
          data.loc[index, 'Treffer'] = 1
 
-    #rm if FALSE
-    if data.loc[index, 'area'] < 12 and data.loc[index, 'area'] > 80 and data.loc[index, 'circ'] < 1.0 and data.loc[index, 'circ'] > 2.1:
-        print 'nope'
+    bar.next()
+bar.finish()
 
 data[data['Treffer'] == 1].to_file('output/Treffer_shape.shp')
 
@@ -113,16 +147,5 @@ data.to_file(outpoly)
 
 
 ##EXTENDED##
-####RASTERSTATS#######
-raster2stats="%s" % (input) #parser?
-stats = zonal_stats("output/Treffer_shape.shp", raster2stats)
-
-#print stats[1].keys()
-
-for s in stats:
-    stats_depth = (s['max']-s['min'])
-    print stats_depth
-
 
 print "--- done ---"
-####RASTERSTATS####### # TODO: add to polygon as attrib field

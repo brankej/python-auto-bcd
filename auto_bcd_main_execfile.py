@@ -122,7 +122,7 @@ while state != 'FINISHED':
         cmd ="python auto_bcd_postprocessing.py -input_craters output/bcd_raster.tif"
         os.system(cmd)
 
-        cmd="shp_n_attribs.py -rast data_input/%s" % (input)
+        cmd="python shp_n_attribs.py -rast data_input/%s" % (input)
         os.system(cmd)
 
         print " --- Postprocessing completed --- "
@@ -145,7 +145,7 @@ while state != 'FINISHED':
     # Do some work
 
     if error =="TRUE":
-        cmd ="python auto_bcd_errorassessment.py -input_craters output/bcd_raster.tif" # TODO: !!!!!!!
+        cmd ="python auto_bcd_errorassessment.py -validation data_input/XYXYX.shp" # TODO: !!!!!!!
         os.system(cmd)
 
         print " --- Error Assessment completed --- "
