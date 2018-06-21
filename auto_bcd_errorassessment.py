@@ -52,7 +52,7 @@ classified = args.classified
 ########################################################
 
 def create_mask_from_vector(vector_data_path, cols, rows, geo_transform, projection, target_value=1):
-    """Rasterrize the given vector (wrapper for gdal.RasterizerLayer)."""
+    """Rasterrize the given vector - return datasoure (wrapper for gdal.RasterizerLayer)."""
     driver = ogr.GetDriverByName('ESRI Shapefile')
     data_source = driver.Open(vector_data_path, 0)
     layer = data_source.GetLayer(0)
@@ -63,12 +63,32 @@ def create_mask_from_vector(vector_data_path, cols, rows, geo_transform, project
     gdal.RasterizeLayer(target_ds, [1], layer, burn_values=[target_value])
     return target_ds
 
+def create_mask_from_vector_ext(vector_data_path, cols, rows, geo_transform, projection, target_value=1):
+    """Rasterrize the given vector - return raster (wrapper for gdal.RasterizerLayer)."""
+    driver = ogr.GetDriverByName('ESRI Shapefile')
+    data_source = driver.Open(vector_data_path, 0)
+    #check for datapath and rm
+    if vector_data_path.startswith("data_input"):
+        n = vector_data_path[10:-4]
+    if vector_data_path.startswith("output"):
+        n = vector_data_path[6:-4]
+    # make raster
+    name = "output%s_RAST.tif" % (n)
+    layer = data_source.GetLayer(0)
+    driver = gdal.GetDriverByName("GTiff") # in memory dataset
+    target_ds = driver.Create(name, cols, rows, 1, gdal.GDT_UInt16)
+    target_ds.SetGeoTransform(geo_transform)
+    target_ds.SetProjection(projection)
+    gdal.RasterizeLayer(target_ds, [1], layer, burn_values=[target_value])
+
 
 def vectors_to_raster(path, rows, cols, geo_transform, projection):
     """Rasterize vector"""
     labeled_pixels = np.zeros((rows, cols))
     label = 1
     ds= create_mask_from_vector(path, cols, rows, geo_transform, projection, target_value=label)
+    #create bkp Raster of Output Data
+    create_mask_from_vector_ext(path, cols, rows, geo_transform, projection, target_value=label)
     band = ds.GetRasterBand(1)
     labeled_pixels = band.ReadAsArray()
     ds=None
@@ -89,28 +109,25 @@ rows, cols = band_1_array.shape
 
 #ERROR ASSESSMENT
 
+#shp output to raster to array
+validat = vectors_to_raster(val_shapefile, rows, cols, geo_transform, proj)
+predict = vectors_to_raster(classified, rows, cols, geo_transform, proj)
 
-verification_pixels = vectors_to_raster(val_shapefile, rows, cols, geo_transform, proj)
-classification = vectors_to_raster(classified, rows, cols, geo_transform, proj)
-
-for_verification = np.nonzero(verification_pixels)
-
-verification_labels = verification_pixels[for_verification]
-
-predicted_labels = classification[for_verification]
-
+#to 1D array
+validation_labels = validat.ravel()
+predicted_labels = predict.ravel()
 
 ##ErrorAssessment Prints#
 print " --- - --- "
-print("Confussion matrix:\n%s" % metrics.confusion_matrix(verification_labels, predicted_labels))
+print("Confussion matrix:\n%s" % metrics.confusion_matrix(validation_labels, predicted_labels))
 print " --- - --- "
-print("Classification report:\n%s" % metrics.classification_report(verification_labels, predicted_labels))
+print("Classification report:\n%s" % metrics.classification_report(validation_labels, predicted_labels))
 print " --- - --- "
-print("Classification accuracy: \n ---> %f" % metrics.accuracy_score(verification_labels, predicted_labels))
+print("Classification accuracy: \n ---> %f" % metrics.accuracy_score(validation_labels, predicted_labels))
 print " --- - --- "
-print("Classification Cohen's Kappa Value: \n ---> %f" % metrics.cohen_kappa_score(verification_labels, predicted_labels))
+print("Classification Cohen's Kappa Value: \n ---> %f" % metrics.cohen_kappa_score(validation_labels, predicted_labels)) #https://de.wikipedia.org/wiki/Cohens_Kappa
 print " --- - --- "
-print("Classification R^2 (coefficient of determination): \n ---> %f" % metrics.r2_score(verification_labels, predicted_labels))
+print("Classification R^2 (coefficient of determination): \n ---> %f" % metrics.r2_score(validation_labels, predicted_labels))
 print " --- - --- "
 
 
