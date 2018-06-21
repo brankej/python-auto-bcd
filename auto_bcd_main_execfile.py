@@ -29,6 +29,7 @@ Created on Wed May 23 2018
 import os
 import argparse
 from progress.spinner import Spinner
+from datetime import datetime as dt
 #===========================================================================
 
 
@@ -68,6 +69,7 @@ error=args.error
 ########################################################
 
 #OUTPUT===================================================================
+start = dt.now()
 
 #####PREPROCESSING########
 spinner = Spinner('Loading ')
@@ -145,18 +147,19 @@ while state != 'FINISHED':
     # Do some work
 
     if error =="TRUE":
-        cmd ="python auto_bcd_errorassessment.py -validation data_input/XYXYX.shp" # TODO: !!!!!!!
+        cmd ="python auto_bcd_errorassessment.py -validation output/Treffer_shape.shp -classified data_input/bomb_crater_val_all_cut.shp "# TODO: !!!!!!!
         os.system(cmd)
 
-        print " --- Error Assessment completed --- "
+        print " --- Errorassessment completed --- "
         spinner.next()
         state = "FINISHED"
 
     else:
-        print "skipped Error Assessment"
+        print "skipped Errorassessment"
         spinner.next()
         state = "FINISHED"
 
 print " --- done --- "
 
 print " --- Automatic Bomb Crate Detection FINISHED --- "
+print dt.now() - start
