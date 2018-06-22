@@ -15,4 +15,5 @@
 *.sbx
 *.sbn
 *.cpg
-*.txt
+read_thres_txt.py
+

@@ -20,7 +20,7 @@
 
 """
 This Script attempts to autmomatically detect past bomb craters - PREPROCESSING
-Created on Wed May 23 2018
+Created on Fr June 22 2018
 @author: j.branke & j.köck
 """
 
@@ -32,19 +32,15 @@ from progress.bar import Bar
 import argparse
 #===========================================================================
 
-
-
 #PARSER====================================================================
-
 parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect past bomb craters - PREPROCESSING.')
 parser.add_argument('-DEM', type=str, help='Input of digital elevation model')
 parser.add_argument('-size', type=int, help='size for further calculations', nargs='?', default=9)
-parser.add_argument('-method', type=str, help='method for calculations --> List of Different SAGA GIS Tools containing (SVF; MINIC; MAXIC; PROFC; CROSC; CLASS; SINKS; T.OPENESS [optional TPI])', choices=['less','all'], nargs='?', default='less')
+parser.add_argument('-method', type=str, help='method for calculations --> List of Different SAGA GIS Tools containing (SVF; MINIC; MAXIC; PROFC; CROSC; CLASS; SINKS; T.OPENESS [optional TPI] [https://github.com/brankej/python-auto-bcd])', choices=['less','all'], nargs='?', default='less')
 parser.add_argument('-radius', type=int, help='radius of suspected bombcraters', nargs='?', default=5)
- # TODO: in help cite authors of ideas and tools
+
 
 args = parser.parse_args()
-
 
 input = args.DEM
 size=args.size
@@ -52,13 +48,9 @@ method=args.method
 radius=args.radius
 #=========================================================================
 
-
-
 ########################################################
 ####             Functions                ##############
 ########################################################
-
-
 
 ########################################################
 ####             Main                ###################
@@ -76,9 +68,6 @@ if method=="less":
     cmd ='saga_cmd ta_morphometry 4 -DEM data_input/%s -CLASS tmp/class.sgrd' %(input)
     os.system(cmd)
 
-    cmd ='saga_cmd sim_qm_of_esp 1 -DEM data_input/%s -FILLED  tmp/filledsinks.sgrd -SINKS tmp/sinks.sgrd -DZFILL 0.05' %(input)
-    os.system(cmd)
-
     cmd = 'saga_cmd ta_lighting 5 -DEM data_input/%s -POS tmp/pos.sgrd -NEG tmp/neg.sgrd' %(input)
     os.system(cmd)
 
@@ -93,9 +82,6 @@ elif method=="all":
     os.system(cmd)
 
     cmd ='saga_cmd ta_morphometry 4 -DEM data_input/%s -CLASS tmp/class.sgrd' %(input)
-    os.system(cmd)
-
-    cmd ='saga_cmd sim_qm_of_esp 1 -DEM data_input/%s -FILLED  tmp/filledsinks.sgrd -SINKS tmp/sinks.sgrd -DZFILL 0.05' %(input)
     os.system(cmd)
 
     cmd ='saga_cmd ta_morphometry 18 -DEM data_input/%s -TPI tmp/tpi.sgrd' %(input)  # TODO: takes so much time

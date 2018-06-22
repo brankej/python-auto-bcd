@@ -20,7 +20,7 @@
 
 """
 This Script attempts to autmomatically detect past bomb craters - PREPROCESSING
-Created on Wed May 23 2018
+Created on Fr June 22 2018
 @author: j.branke & j.köck
 """
 
@@ -33,13 +33,10 @@ from osgeo import ogr
 from sklearn import metrics
 #===========================================================================
 
-
-
 #PARSER====================================================================
-
 parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect past bomb craters - PREPROCESSING.')
 parser.add_argument('-validation', type=str, help='Pfad zu den Validation Polygonshapefile')
-parser.add_argument('-classified', type=str, help='Pfad zu den Klassifiziertem Polygonshapefile')
+parser.add_argument('-classified', type=str, help='Pfad zu dem Klassifizierten Polygonshapefile')
 
 args = parser.parse_args()
 
@@ -107,7 +104,9 @@ band_1 = raster_dataset.GetRasterBand(1)
 band_1_array = band_1.ReadAsArray()
 rows, cols = band_1_array.shape
 
+###################################
 #ERROR ASSESSMENT
+###################################
 
 #shp output to raster to array
 validat = vectors_to_raster(val_shapefile, rows, cols, geo_transform, proj)
@@ -121,13 +120,23 @@ predicted_labels = predict.ravel()
 print " --- - --- "
 print("Confussion matrix:\n%s" % metrics.confusion_matrix(validation_labels, predicted_labels))
 print " --- - --- "
+tn, fp, fn, tp = metrics.confusion_matrix(validation_labels, predicted_labels).ravel()
+print "True Negatives", tn, "False Positives", fp, "False Negatives", fn, "True Positives", tp
+print " --- - --- "
 print("Classification report:\n%s" % metrics.classification_report(validation_labels, predicted_labels))
+print " --- - --- "
+completeness = (float(tp)/(float(tp)+(float(fn))))
+print("Classification Completeness: \n ---> %f" % completeness)
+print " --- - --- "
+correctness = (float(tp)/(float(tp)+(float(fp))))
+print("Classification Correctness: \n ---> %f" % correctness)
+print " --- - --- "
+quality = ((completeness*correctness)/((completeness+correctness)-(completeness*correctness)))
+print("Classification Quality: \n ---> %f" % quality)
 print " --- - --- "
 print("Classification accuracy: \n ---> %f" % metrics.accuracy_score(validation_labels, predicted_labels))
 print " --- - --- "
 print("Classification Cohen's Kappa Value: \n ---> %f" % metrics.cohen_kappa_score(validation_labels, predicted_labels)) #https://de.wikipedia.org/wiki/Cohens_Kappa
-print " --- - --- "
-print("Classification R^2 (coefficient of determination): \n ---> %f" % metrics.r2_score(validation_labels, predicted_labels))
 print " --- - --- "
 
 

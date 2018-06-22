@@ -20,7 +20,7 @@
 
 """
 This Script attempts to autmomatically detect past bomb craters - POSTPROCESSING
-Created on Wed Juni 06 2018
+Created on Fr June 22 2018
 @author: j.branke & j.köck
 """
 
@@ -35,24 +35,19 @@ import osgeo.ogr as ogr
 import cv2 as cv
 #===========================================================================
 
-
 #PARSER====================================================================
-
 parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect past bomb craters - POSTPROCESSING.')
 parser.add_argument('-input_craters', type=str, help='Input of bcd - Craters')
-parser.add_argument('-thresmax', type=float, help='max threshold for bombcraters value' , nargs='?', default= 8)
+parser.add_argument('-thresmax', type=float, help='max threshold for bombcraters value' , nargs='?', default= 8.0)
 parser.add_argument('-thresmin', type=float, help='min threshold for bombcraters value', nargs='?', default= 4.2)
 parser.add_argument('-kernel', type=int, help='Kernel Size', nargs='?', default= 3)
 
-
-
 args = parser.parse_args()
-
 
 input_craters = args.input_craters
 thresmax = args.thresmax
 thresmin = args.thresmin
-kernel = args.kernel
+kernel_ = args.kernel
 #=========================================================================
 
 
@@ -84,10 +79,8 @@ def thresholds2array(inarray, thresmin, thresmax, NCOLS, NROWS):
 
 
 ###EINLESEN
-
 #read in craters
 craters_array = raster2array(input_craters)
-
 
 ###########get necessary raster information###########
 myrast = gdal.Open(input_craters)
@@ -117,10 +110,9 @@ dataset.SetProjection(wkt_projection)
 band_1 = dataset.GetRasterBand(1)
 band_1.WriteArray(bombcraters_array)
 
-# morphological transformation                                             #https://docs.opencv.org/trunk/d9/d61/tutorial_py_morphological_ops.html
-
+########### morphological transformation   ###########                                          #https://docs.opencv.org/trunk/d9/d61/tutorial_py_morphological_ops.html
 #opening
-kernel = np.ones((kernel,kernel),np.uint8)
+kernel = np.ones((kernel_,kernel_),np.uint8)
 opening = cv.morphologyEx(bombcraters_array, cv.MORPH_OPEN, kernel)
 
 driver = gdal.GetDriverByName('GTiff')
