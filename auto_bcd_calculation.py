@@ -308,8 +308,9 @@ bar = Bar(' -> Processing Layerstack', max=NCOLS, suffix='%(percent)d%%')
 for i in range(0,NCOLS,1):
     for j in range(0,NROWS,1):
 
-        detect_array[i][j]=svf_detect_array[i][j]+minic_detect_array[i][j]+class_detect_array[i][j]+maxic_detect_array[i][j]+profc_detect_array[i][j]+crosc_detect_array[i][j]+pos_detect_array[i][j]+protection_array[i][j]
-
+        detect_array[i][j]=svf_detect_array[i][j]+pos_detect_array[i][j]+protection_array[i][j] #+minic_detect_array[i][j]+class_detect_array[i][j]+maxic_detect_array[i][j]+profc_detect_array[i][j]+crosc_detect_array[i][j]
+        if detect_array[i][j] < 0.0:
+            detect_array[i][j] = Nodata
     bar.next()
 bar.finish()
 
@@ -324,6 +325,7 @@ dataset.SetProjection(wkt_projection)
 
 band_1 = dataset.GetRasterBand(1)
 band_1.WriteArray(detect_array)
+band_1.SetNoDataValue(Nodata)
 
 #flushcache
 dataset.FlushCache()
