@@ -41,7 +41,7 @@ parser.add_argument('-method', type=str, help='method for calculations --> List 
 parser.add_argument('-pre', type=str, help='pre of preprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
 parser.add_argument('-calc', type=str, help='calc of preprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
 parser.add_argument('-post', type=str, help='post of postprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
-parser.add_argument('-error', type=str, help='post of postprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='FALSE')
+parser.add_argument('-error', type=str, help='error of error assessment tool usage', choices=['TRUE','FALSE'], nargs='?', default='FALSE')
 
 args = parser.parse_args()
 

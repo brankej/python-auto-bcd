@@ -19,7 +19,7 @@
 
 
 """
-This Script attempts to autmomatically detect past bomb craters - PREPROCESSING
+This Script attempts to autmomatically detect past bomb craters - Error Assessment
 Created on Fr June 22 2018
 @author: j.branke & j.köck
 """
@@ -34,7 +34,7 @@ from sklearn import metrics
 #===========================================================================
 
 #PARSER====================================================================
-parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect past bomb craters - PREPROCESSING.')
+parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect past bomb craters - Error Assessment.')
 parser.add_argument('-validation', type=str, help='Pfad zu den Validation Polygonshapefile')
 parser.add_argument('-classified', type=str, help='Pfad zu dem Klassifizierten Polygonshapefile')
 
