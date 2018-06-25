@@ -62,12 +62,6 @@ if method=="less":
     cmd ='saga_cmd ta_lighting 3 -DEM data_input/%s -SVF tmp/svf.sgrd -VISIBLE tmp/visible.sgrd' %(input)
     os.system(cmd)
 
-    cmd ='saga_cmd ta_morphometry 23 -DEM data_input/%s -FEATURES tmp/features.sgrd -MINIC tmp/minic.sgrd -MAXIC tmp/maxic.sgrd -PROFC tmp/profc.sgrd -CROSC tmp/crosc.sgrd -SIZE %i' %(input, size)
-    os.system(cmd)
-
-    cmd ='saga_cmd ta_morphometry 4 -DEM data_input/%s -CLASS tmp/class.sgrd' %(input)
-    os.system(cmd)
-
     cmd = 'saga_cmd ta_lighting 5 -DEM data_input/%s -POS tmp/pos.sgrd -NEG tmp/neg.sgrd' %(input)
     os.system(cmd)
 
@@ -82,9 +76,6 @@ elif method=="all":
     os.system(cmd)
 
     cmd ='saga_cmd ta_morphometry 4 -DEM data_input/%s -CLASS tmp/class.sgrd' %(input)
-    os.system(cmd)
-
-    cmd ='saga_cmd ta_morphometry 18 -DEM data_input/%s -TPI tmp/tpi.sgrd' %(input)  # TODO: takes so much time
     os.system(cmd)
 
     cmd = 'saga_cmd ta_lighting 5 -DEM data_input/%s -POS tmp/pos.sgrd -NEG tmp/neg.sgrd' %(input)

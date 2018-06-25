@@ -20,7 +20,7 @@
 
 
 """
-This Script attempts to autmomatically detect bomb craters - MAIN Execute File
+This Script attempts to autmomatically detect bomb craters - Shape'n Attributes Script
 Created on Fr June 22 2018
 @author: j.branke & j.köck
 """

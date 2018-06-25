@@ -35,13 +35,13 @@ from datetime import datetime as dt
 parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect bomb craters - MAIN Execute File.')
 parser.add_argument('-DEM', type=str, help='Input of digital elevation model')
 parser.add_argument('-thres', type=str, help='Input of Thresholds.txt File')
-parser.add_argument('-vali', type=str, help='Input of validation Shapefile')
+parser.add_argument('-vali', type=str, help='Input of validation Shapefile',nargs='?', default=None)
 parser.add_argument('-size', type=int, help='size for further calculations', nargs='?', default=9)
-parser.add_argument('-method', type=str, help='method for calculations --> List of Different SAGA GIS Tools containing (SVF; MINIC; MAXIC; PROFC; CROSC; CLASS; T.OPENESS [optional TPI])', choices=['less','all'], nargs='?', default='less')
+parser.add_argument('-method', type=str, help='method for calculations --> List of Different SAGA GIS Tools containing (SVF; Openess; Protection Index [less]; MINIC; MAXIC; PROFC; CROSC; CLASS [all])', choices=['less','all'], nargs='?', default='less')
 parser.add_argument('-pre', type=str, help='pre of preprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
 parser.add_argument('-calc', type=str, help='calc of preprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
 parser.add_argument('-post', type=str, help='post of postprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
-parser.add_argument('-error', type=str, help='post of postprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='TRUE')
+parser.add_argument('-error', type=str, help='post of postprocessing tool usage', choices=['TRUE','FALSE'], nargs='?', default='FALSE')
 
 args = parser.parse_args()
 
@@ -112,8 +112,14 @@ print " --- done --- "
 
 #####CALCULATION########
 # Do some work
-if calc=="TRUE":
-    cmd ="python auto_bcd_calculation.py -input_svf tmp/svf.sdat -input_minic tmp/minic.sdat -input_maxic tmp/maxic.sdat -input_profc tmp/profc.sdat -input_crosc tmp/crosc.sdat -input_curv_class tmp/class.sdat -input_pos tmp/pos.sdat -input_protection tmp/protection.sdat -svf_thres_min %f -svf_thres_max %f -minic_thres_min %f -minic_thres_max %f -maxic_thres_min %f -maxic_thres_max %f -profc_thres_min %f -profc_thres_max %f -crosc_thres_min %f -crosc_thres_max %f -pos_thres_min %f -pos_thres_max %f -protection_thres_min %f -protection_thres_max %f " % (thres_svf_min, thres_svf_max, thres_minic_min , thres_minic_max, thres_maxic_min, thres_maxic_max, thres_profc_min, thres_profc_max, thres_crosc_min, thres_crosc_max, thres_pos_min, thres_pos_max, thres_protection_min, thres_protection_max)
+if calc=="TRUE" and method=="all":
+    cmd ="python auto_bcd_calculation.py -method %s -input_svf tmp/svf.sdat -input_minic tmp/minic.sdat -input_maxic tmp/maxic.sdat -input_profc tmp/profc.sdat -input_crosc tmp/crosc.sdat -input_curv_class tmp/class.sdat -input_pos tmp/pos.sdat -input_protection tmp/protection.sdat -svf_thres_min %f -svf_thres_max %f -minic_thres_min %f -minic_thres_max %f -maxic_thres_min %f -maxic_thres_max %f -profc_thres_min %f -profc_thres_max %f -crosc_thres_min %f -crosc_thres_max %f -pos_thres_min %f -pos_thres_max %f -protection_thres_min %f -protection_thres_max %f " % (method, thres_svf_min, thres_svf_max, thres_minic_min , thres_minic_max, thres_maxic_min, thres_maxic_max, thres_profc_min, thres_profc_max, thres_crosc_min, thres_crosc_max, thres_pos_min, thres_pos_max, thres_protection_min, thres_protection_max)
+    os.system(cmd)
+
+    print " --- Calculations completed --- "
+
+if calc=="TRUE" and method=="less":
+    cmd ="python auto_bcd_calculation.py -method %s -input_svf tmp/svf.sdat -input_pos tmp/pos.sdat -input_protection tmp/protection.sdat -svf_thres_min %f -svf_thres_max %f -pos_thres_min %f -pos_thres_max %f -protection_thres_min %f -protection_thres_max %f " % (method, thres_svf_min, thres_svf_max, thres_pos_min, thres_pos_max, thres_protection_min, thres_protection_max)
     os.system(cmd)
 
     print " --- Calculations completed --- "
@@ -156,8 +162,10 @@ else:
 
 print " --- done --- "
 
-#python auto_bcd_main_execfile.py -DEM DGM05_bombdetect_cut.tif -thres Thresholds.txt -vali bombcraters_validate_cut.shp
-#python auto_bcd_main_execfile.py -DEM uni_ALSNORDTIROL_DGM_1m_cut.tif -thres Thresholds.txt -vali bombcraters_validate_cut.shp
+
+#python auto_bcd_main_execfile.py -DEM DGM05_bombdetect_cut.tif -thres Thresholds.txt -vali bombcraters_validate_cut.shp -error TRUE
+#python auto_bcd_main_execfile.py -DEM DGM05_bombdetect_cut_natters.tif -thres Thresholds.txt -vali bombcraters_validate_cut_natters.shp -error TRUE
+#python auto_bcd_main_execfile.py -DEM uni_ALSNORDTIROL_DGM_1m_cut.tif -thres Thresholds.txt -vali bombcraters_validate_cut.shp -error TRUE
 
 print " --- Automatic Bomb Crate Detection FINISHED --- "
 print dt.now() - start

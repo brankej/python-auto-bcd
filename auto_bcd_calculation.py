@@ -35,13 +35,14 @@ import osgeo.gdal as gdal
 #PARSER====================================================================
 parser = argparse.ArgumentParser(description='This Script attempts to autmomatically detect past bomb craters - CALCULATION.')
 parser.add_argument('-input_svf', type=str, help='Input of sky-view-factor')
-parser.add_argument('-input_minic', type=str, help='Input of morph_features -> minic')
-parser.add_argument('-input_maxic', type=str, help='Input of morph_features -> maxic')
-parser.add_argument('-input_profc', type=str, help='Input of profc')
-parser.add_argument('-input_crosc', type=str, help='Input of crosc')
+parser.add_argument('-input_minic', type=str, help='Input of morph_features -> minic',nargs='?', default=None)
+parser.add_argument('-input_maxic', type=str, help='Input of morph_features -> maxic',nargs='?', default=None)
+parser.add_argument('-input_profc', type=str, help='Input of profc',nargs='?', default=None)
+parser.add_argument('-input_crosc', type=str, help='Input of crosc',nargs='?', default=None)
 parser.add_argument('-input_pos', type=str, help='Input of pos')
 parser.add_argument('-input_protection', type=str, help='Input of protection')
-parser.add_argument('-input_curv_class', type=str, help='Input of curvature classes')
+parser.add_argument('-input_curv_class', type=str, help='Input of curvature classes',nargs='?', default=None)
+parser.add_argument('-method', type=str, help='method for calculations --> List of Different SAGA GIS Tools containing (SVF; Openess; Protection Index [less]; MINIC; MAXIC; PROFC; CROSC; CLASS [all])', choices=['less','all'], nargs='?', default='less')
 
 ### # ### # ### # ###
 parser.add_argument('-svf_thres_min', type=float, help='Threshold min SVF')
@@ -69,6 +70,7 @@ input_crosc=args.input_crosc
 input_pos=args.input_pos
 input_protection=args.input_protection
 input_curv_class=args.input_curv_class
+method=args.method
 
 ### # ### # ### # ###
 thres_svf_min = args.svf_thres_min
@@ -111,223 +113,352 @@ def thresholds2array(inarray, thresmin, thresmax, NCOLS, NROWS):
 ####             Main                ###################
 ########################################################
 
-#####
-###EINLESEN
-#####
-
-#read in svf
-svf_array = raster2array(input_svf)
-
-#read in minic
-minic_array = raster2array(input_minic)
-
-#read in maxic
-maxic_array = raster2array(input_maxic)
-
-#read in profc
-profc_array = raster2array(input_profc)
-
-#read in crosc
-crosc_array = raster2array(input_crosc)
-
-#read in pos
-pos_array = raster2array(input_pos)
-
-#read in PROTECTION
-protection_array = raster2array(input_protection)
-
-#read in curv_class
-class_array = raster2array(input_curv_class)
-
-###########get necessary raster information###########
-myrast = gdal.Open(input_minic)
-NROWS = myrast.RasterXSize
-NCOLS = myrast.RasterYSize
-geotransform = myrast.GetGeoTransform()
-wkt_projection = myrast.GetProjection()
-XULCorner = geotransform[0]
-YULCorner = geotransform[3]
-Cellsize = geotransform[1]
-
-myband = myrast.GetRasterBand(1)
-Nodata = myband.GetNoDataValue()
-
-print "--- DATA LOADED ---"         # TODO: unterschiedliche gewichtung der detect arrays
-
-###DO STUFF
-###########################################
-svf_detect_array = np.empty((NCOLS,NROWS),dtype=float)
-#####
-bar = Bar(' -> Processing svf', max=NCOLS, suffix='%(percent)d%%')
-######
-
-for i in range(0,NCOLS,1):
-    for j in range(0,NROWS,1):
-
-        if svf_array[i][j] > thres_svf_min and svf_array[i][j] < thres_svf_max:
-            svf_detect_array[i][j] = 1
-        else :
-            svf_detect_array[i][j] = 0
-
-    bar.next()
-bar.finish()
-
-###########################################
-minic_detect_array = np.empty((NCOLS,NROWS),dtype=float)
-#####
-bar = Bar(' -> Processing minic', max=NCOLS, suffix='%(percent)d%%')
-######
-
-for i in range(0,NCOLS,1):
-    for j in range(0,NROWS,1):
-
-        if minic_array[i][j] > thres_minic_min and minic_array[i][j] < thres_minic_max:
-            minic_detect_array[i][j] = 1
-        else :
-            minic_detect_array[i][j] = 0
-
-    bar.next()
-bar.finish()
-
-###########################################
-maxic_detect_array = np.empty((NCOLS,NROWS),dtype=float)
-#####
-bar = Bar(' -> Processing maxic', max=NCOLS, suffix='%(percent)d%%')
-######
-
-for i in range(0,NCOLS,1):
-    for j in range(0,NROWS,1):
-
-        if maxic_array[i][j] > thres_maxic_min and maxic_array[i][j] < thres_maxic_max:
-            maxic_detect_array[i][j] = 1
-        else :
-            maxic_detect_array[i][j] = 0
-
-    bar.next()
-bar.finish()
-
-###########################################
-class_detect_array = np.empty((NCOLS,NROWS),dtype=float)
-#####
-bar = Bar(' -> Processing curvature class', max=NCOLS, suffix='%(percent)d%%')
-######
-
-for i in range(0,NCOLS,1):
-    for j in range(0,NROWS,1):
-
-        if class_array[i][j] == 0:
-            class_detect_array[i][j] = 1
-        else :
-            class_detect_array[i][j] = 0
-
-    bar.next()
-bar.finish()
-
-#####EXTENDED#####
-
-#############################################
-profc_detect_array = np.empty((NCOLS,NROWS),dtype=float)
-#####
-bar = Bar(' -> Processing profc', max=NCOLS, suffix='%(percent)d%%')
-######
-
-for i in range(0,NCOLS,1):
-    for j in range(0,NROWS,1):
-
-        if profc_array[i][j] > thres_profc_min and profc_array[i][j] < thres_profc_max:
-            profc_detect_array[i][j] = 1
-        else :
-            profc_detect_array[i][j] = 0
-
-    bar.next()
-bar.finish()
-
-#############################################
-crosc_detect_array = np.empty((NCOLS,NROWS),dtype=float)
-#####
-bar = Bar(' -> Processing crosc', max=NCOLS, suffix='%(percent)d%%')
-######
-
-for i in range(0,NCOLS,1):
-    for j in range(0,NROWS,1):
-
-        if crosc_array[i][j] > thres_crosc_min and crosc_array[i][j] < thres_crosc_max:
-            crosc_detect_array[i][j] = 1
-        else :
-            crosc_detect_array[i][j] = 0
-
-    bar.next()
-bar.finish()
-
-#############################################
-pos_detect_array = np.empty((NCOLS,NROWS),dtype=float)
-
-#####
-bar = Bar(' -> Processing pos', max=NCOLS, suffix='%(percent)d%%')
-######
-
-for i in range(0,NCOLS,1):
-    for j in range(0,NROWS,1):
-
-        if pos_array[i][j] > thres_pos_min and pos_array[i][j] < thres_pos_max:
-            pos_detect_array[i][j] = 1
-        else :
-            pos_detect_array[i][j] = 0
-
-    bar.next()
-bar.finish()
-
-#############################################
-protection_detect_array = np.empty((NCOLS,NROWS),dtype=float)
-
-#####
-bar = Bar(' -> Processing Protection', max=NCOLS, suffix='%(percent)d%%')
-######
-
-for i in range(0,NCOLS,1):
-    for j in range(0,NROWS,1):
-
-        if protection_array[i][j] > thres_protection_min and protection_array[i][j] < thres_protection_max:
-            protection_detect_array[i][j] = 1
-        else :
-            protection_detect_array[i][j] = 0
-
-    bar.next()
-bar.finish()
-
-####EXTENDED END#####
-
-#############################################
-detect_array = np.empty((NCOLS,NROWS),dtype=float)
+###method parser###
+if method  == "less":
 
 
-#####
-bar = Bar(' -> Processing Layerstack', max=NCOLS, suffix='%(percent)d%%')
-######
+    #####
+    ###EINLESEN
+    #####
 
-for i in range(0,NCOLS,1):
-    for j in range(0,NROWS,1):
+    #read in svf
+    svf_array = raster2array(input_svf)
 
-        detect_array[i][j]=svf_detect_array[i][j]+pos_detect_array[i][j]+protection_array[i][j] #+minic_detect_array[i][j]+class_detect_array[i][j]+maxic_detect_array[i][j]+profc_detect_array[i][j]+crosc_detect_array[i][j]
-        if detect_array[i][j] < 0.0:
-            detect_array[i][j] = Nodata
-    bar.next()
-bar.finish()
+    #read in pos
+    pos_array = raster2array(input_pos)
 
-#######################################
-###Output
+    #read in PROTECTION
+    protection_array = raster2array(input_protection)
 
-#detect_array_out
-driver = gdal.GetDriverByName('GTiff')
-dataset = driver.Create("output/bcd_raster.tif", NROWS, NCOLS, 1, gdal.GDT_Float32 )
-dataset.SetGeoTransform((XULCorner,Cellsize,0,YULCorner,0,-Cellsize))
-dataset.SetProjection(wkt_projection)
+    ###########get necessary raster information###########
+    myrast = gdal.Open(input_svf)
+    NROWS = myrast.RasterXSize
+    NCOLS = myrast.RasterYSize
+    geotransform = myrast.GetGeoTransform()
+    wkt_projection = myrast.GetProjection()
+    XULCorner = geotransform[0]
+    YULCorner = geotransform[3]
+    Cellsize = geotransform[1]
 
-band_1 = dataset.GetRasterBand(1)
-band_1.WriteArray(detect_array)
-band_1.SetNoDataValue(Nodata)
+    myband = myrast.GetRasterBand(1)
+    Nodata = myband.GetNoDataValue()
 
-#flushcache
-dataset.FlushCache()
+    print "--- DATA LOADED ---"         # TODO: unterschiedliche gewichtung der detect arrays
+
+    ###DO STUFF
+    ###########################################
+    svf_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+    #####
+    bar = Bar(' -> Processing svf', max=NCOLS, suffix='%(percent)d%%')
+    ######
+
+    for i in range(0,NCOLS,1):
+        for j in range(0,NROWS,1):
+
+            if svf_array[i][j] > thres_svf_min and svf_array[i][j] < thres_svf_max:
+                svf_detect_array[i][j] = 1
+            else :
+                svf_detect_array[i][j] = 0
+
+        bar.next()
+    bar.finish()
+
+    #############################################
+    pos_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+    #####
+    bar = Bar(' -> Processing pos', max=NCOLS, suffix='%(percent)d%%')
+    ######
+
+    for i in range(0,NCOLS,1):
+        for j in range(0,NROWS,1):
+
+            if pos_array[i][j] > thres_pos_min and pos_array[i][j] < thres_pos_max:
+                pos_detect_array[i][j] = 1
+            else :
+                pos_detect_array[i][j] = 0
+
+        bar.next()
+    bar.finish()
+
+    #############################################
+    protection_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+    #####
+    bar = Bar(' -> Processing Protection', max=NCOLS, suffix='%(percent)d%%')
+    ######
+
+    for i in range(0,NCOLS,1):
+        for j in range(0,NROWS,1):
+
+            if protection_array[i][j] > thres_protection_min and protection_array[i][j] < thres_protection_max:
+                protection_detect_array[i][j] = 1
+            else :
+                protection_detect_array[i][j] = 0
+
+        bar.next()
+    bar.finish()
+
+    ####EXTENDED END#####
+
+    #############################################
+    detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+    #####
+    bar = Bar(' -> Processing Layerstack', max=NCOLS, suffix='%(percent)d%%')
+    ######
+
+    for i in range(0,NCOLS,1):
+        for j in range(0,NROWS,1):
+
+            detect_array[i][j]=svf_detect_array[i][j]+pos_detect_array[i][j]+protection_array[i][j]
+            if detect_array[i][j] < 0.0:
+                detect_array[i][j] = Nodata
+        bar.next()
+    bar.finish()
+
+    #######################################
+
+    ##########################
+    ###Output
+    ##########################
+
+    #detect_array_out
+    driver = gdal.GetDriverByName('GTiff')
+    dataset = driver.Create("output/bcd_raster.tif", NROWS, NCOLS, 1, gdal.GDT_Float32 )
+    dataset.SetGeoTransform((XULCorner,Cellsize,0,YULCorner,0,-Cellsize))
+    dataset.SetProjection(wkt_projection)
+
+    band_1 = dataset.GetRasterBand(1)
+    band_1.WriteArray(detect_array)
+    band_1.SetNoDataValue(Nodata)
+
+    #flushcache
+    dataset.FlushCache()
+
+
+if method == "all":
+
+    #####
+    ###EINLESEN
+    #####
+
+    #read in svf
+    svf_array = raster2array(input_svf)
+
+    #read in minic
+    minic_array = raster2array(input_minic)
+
+    #read in maxic
+    maxic_array = raster2array(input_maxic)
+
+    #read in profc
+    profc_array = raster2array(input_profc)
+
+    #read in crosc
+    crosc_array = raster2array(input_crosc)
+
+    #read in pos
+    pos_array = raster2array(input_pos)
+
+    #read in PROTECTION
+    protection_array = raster2array(input_protection)
+
+    #read in curv_class
+    class_array = raster2array(input_curv_class)
+
+    ###########get necessary raster information###########
+    myrast = gdal.Open(input_minic)
+    NROWS = myrast.RasterXSize
+    NCOLS = myrast.RasterYSize
+    geotransform = myrast.GetGeoTransform()
+    wkt_projection = myrast.GetProjection()
+    XULCorner = geotransform[0]
+    YULCorner = geotransform[3]
+    Cellsize = geotransform[1]
+
+    myband = myrast.GetRasterBand(1)
+    Nodata = myband.GetNoDataValue()
+
+    print "--- DATA LOADED ---"         # TODO: unterschiedliche gewichtung der detect arrays
+
+    ###DO STUFF
+    ###########################################
+    svf_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+    #####
+    bar = Bar(' -> Processing svf', max=NCOLS, suffix='%(percent)d%%')
+    ######
+
+    for i in range(0,NCOLS,1):
+        for j in range(0,NROWS,1):
+
+            if svf_array[i][j] > thres_svf_min and svf_array[i][j] < thres_svf_max:
+                svf_detect_array[i][j] = 1
+            else :
+                svf_detect_array[i][j] = 0
+
+        bar.next()
+    bar.finish()
+
+    ###########################################
+    minic_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+    #####
+    bar = Bar(' -> Processing minic', max=NCOLS, suffix='%(percent)d%%')
+    ######
+
+    for i in range(0,NCOLS,1):
+        for j in range(0,NROWS,1):
+
+            if minic_array[i][j] > thres_minic_min and minic_array[i][j] < thres_minic_max:
+                minic_detect_array[i][j] = 1
+            else :
+                minic_detect_array[i][j] = 0
+
+        bar.next()
+    bar.finish()
+
+    ###########################################
+    maxic_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+    #####
+    bar = Bar(' -> Processing maxic', max=NCOLS, suffix='%(percent)d%%')
+    ######
+
+    for i in range(0,NCOLS,1):
+        for j in range(0,NROWS,1):
+
+            if maxic_array[i][j] > thres_maxic_min and maxic_array[i][j] < thres_maxic_max:
+                maxic_detect_array[i][j] = 1
+            else :
+                maxic_detect_array[i][j] = 0
+
+        bar.next()
+    bar.finish()
+
+    ###########################################
+    class_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+    #####
+    bar = Bar(' -> Processing curvature class', max=NCOLS, suffix='%(percent)d%%')
+    ######
+
+    for i in range(0,NCOLS,1):
+        for j in range(0,NROWS,1):
+
+            if class_array[i][j] == 0:
+                class_detect_array[i][j] = 1
+            else :
+                class_detect_array[i][j] = 0
+
+        bar.next()
+    bar.finish()
+
+    #####EXTENDED#####
+
+    #############################################
+    profc_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+    #####
+    bar = Bar(' -> Processing profc', max=NCOLS, suffix='%(percent)d%%')
+    ######
+
+    for i in range(0,NCOLS,1):
+        for j in range(0,NROWS,1):
+
+            if profc_array[i][j] > thres_profc_min and profc_array[i][j] < thres_profc_max:
+                profc_detect_array[i][j] = 1
+            else :
+                profc_detect_array[i][j] = 0
+
+        bar.next()
+    bar.finish()
+
+    #############################################
+    crosc_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+    #####
+    bar = Bar(' -> Processing crosc', max=NCOLS, suffix='%(percent)d%%')
+    ######
+
+    for i in range(0,NCOLS,1):
+        for j in range(0,NROWS,1):
+
+            if crosc_array[i][j] > thres_crosc_min and crosc_array[i][j] < thres_crosc_max:
+                crosc_detect_array[i][j] = 1
+            else :
+                crosc_detect_array[i][j] = 0
+
+        bar.next()
+    bar.finish()
+
+    #############################################
+    pos_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+    #####
+    bar = Bar(' -> Processing pos', max=NCOLS, suffix='%(percent)d%%')
+    ######
+
+    for i in range(0,NCOLS,1):
+        for j in range(0,NROWS,1):
+
+            if pos_array[i][j] > thres_pos_min and pos_array[i][j] < thres_pos_max:
+                pos_detect_array[i][j] = 1
+            else :
+                pos_detect_array[i][j] = 0
+
+        bar.next()
+    bar.finish()
+
+    #############################################
+    protection_detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+    #####
+    bar = Bar(' -> Processing Protection', max=NCOLS, suffix='%(percent)d%%')
+    ######
+
+    for i in range(0,NCOLS,1):
+        for j in range(0,NROWS,1):
+
+            if protection_array[i][j] > thres_protection_min and protection_array[i][j] < thres_protection_max:
+                protection_detect_array[i][j] = 1
+            else :
+                protection_detect_array[i][j] = 0
+
+        bar.next()
+    bar.finish()
+
+    ####EXTENDED END#####
+
+    #############################################
+    detect_array = np.empty((NCOLS,NROWS),dtype=float)
+
+
+    #####
+    bar = Bar(' -> Processing Layerstack', max=NCOLS, suffix='%(percent)d%%')
+    ######
+
+    for i in range(0,NCOLS,1):
+        for j in range(0,NROWS,1):
+
+            detect_array[i][j]=svf_detect_array[i][j]+pos_detect_array[i][j]+protection_array[i][j]+minic_detect_array[i][j]+class_detect_array[i][j]+maxic_detect_array[i][j]+profc_detect_array[i][j]+crosc_detect_array[i][j]
+            if detect_array[i][j] < 0.0:
+                detect_array[i][j] = Nodata
+        bar.next()
+    bar.finish()
+
+    #######################################
+
+    ##########################
+    ###Output
+    ##########################
+
+    #detect_array_out
+    driver = gdal.GetDriverByName('GTiff')
+    dataset = driver.Create("output/bcd_raster.tif", NROWS, NCOLS, 1, gdal.GDT_Float32 )
+    dataset.SetGeoTransform((XULCorner,Cellsize,0,YULCorner,0,-Cellsize))
+    dataset.SetProjection(wkt_projection)
+
+    band_1 = dataset.GetRasterBand(1)
+    band_1.WriteArray(detect_array)
+    band_1.SetNoDataValue(Nodata)
+
+    #flushcache
+    dataset.FlushCache()
 
 print " --- done --- "

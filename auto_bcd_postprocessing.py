@@ -32,6 +32,7 @@ from progress.bar import Bar
 import argparse
 import osgeo.gdal as gdal
 import osgeo.ogr as ogr
+import osgeo.osr as osr
 import cv2 as cv
 #===========================================================================
 
@@ -148,24 +149,17 @@ src_ds = gdal.Open("output/closing.tif")
 srcband = src_ds.GetRasterBand(1)
 #  create output datasource
 
+srs=osr.SpatialReference()
+srs.ImportFromWkt(src_ds.GetProjection())
+
 dst_layername = "output/craters_poly"
 drv = ogr.GetDriverByName("ESRI Shapefile")
 dst_ds = drv.CreateDataSource( dst_layername + ".shp" )
-dst_layer = dst_ds.CreateLayer(dst_layername, srs = None )
+dst_layer = dst_ds.CreateLayer(dst_layername, srs = srs )
 gdal.Polygonize( srcband, srcband , dst_layer, -1, [], callback=None )
 
 print "--- Polygonize done ---"
 ########################################################################
-
-#############
-#Calc GEOMETRY
-#############
-
-#cmd="shp_n_attribs.py"
-#os.system(cmd)
-
-
-
 
 
 print " --- done --- "
